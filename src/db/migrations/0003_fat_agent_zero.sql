@@ -1,0 +1,1 @@
+ALTER TABLE `routine_set_plans` ADD `planned_hold_seconds` integer;
