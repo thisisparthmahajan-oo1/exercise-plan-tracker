@@ -5,9 +5,9 @@ import { Platform } from 'react-native';
 //   accentRgb     → solid base + accentSoft/accentEdge alpha variants
 //   accentInk     → text/icon color shown ON the solid accent (pick for contrast)
 //   accentGradient → 2-stop gradient (lighter, darker) used on GradientButton, RestRing
-const accentRgb = '167, 193, 217'; // iPhone 13 Pro Max Sierra Blue: #A7C1D9
+const accentRgb = '163, 130, 215'; // iPhone 14 Pro Max Deep Purple, saturated for dark UI: #A382D7
 const accentInk = '#08080A';
-export const accentGradient = ['#C5DAE9', '#7FA0BD'] as const;
+export const accentGradient = ['#BCA1E6', '#8467C0'] as const;
 // ==============================================
 
 export const palette = {
