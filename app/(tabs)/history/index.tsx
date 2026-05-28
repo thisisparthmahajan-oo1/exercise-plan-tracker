@@ -28,6 +28,16 @@ export default function HistoryScreen() {
         data={sessions}
         keyExtractor={(s) => s.id}
         contentContainerStyle={[styles.list, { paddingTop: insets.top + 16 }]}
+        ListHeaderComponent={
+          sessions.length > 0 ? (
+            <View style={styles.totalHeader}>
+              <ThemedText style={styles.totalValue}>{sessions.length}</ThemedText>
+              <ThemedText style={styles.totalLabel}>
+                {sessions.length === 1 ? 'WORKOUT LOGGED' : 'WORKOUTS LOGGED'}
+              </ThemedText>
+            </View>
+          ) : null
+        }
         renderItem={({ item }) => {
           const durationMs =
             item.endedAt && item.startedAt
@@ -94,6 +104,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 40,
     gap: 10,
+  },
+  totalHeader: {
+    alignItems: 'flex-start',
+    paddingTop: 4,
+    paddingBottom: 16,
+    gap: 2,
+  },
+  totalValue: {
+    fontSize: 56,
+    lineHeight: 62,
+    color: palette.text,
+    letterSpacing: -2,
+    ...numeric('bold'),
+  },
+  totalLabel: {
+    fontSize: 11,
+    color: palette.accent,
+    fontWeight: '700',
+    letterSpacing: 1.6,
   },
   row: {
     flexDirection: 'row',

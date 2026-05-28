@@ -1,3 +1,5 @@
+import * as DocumentPicker from 'expo-document-picker';
+import { File } from 'expo-file-system';
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -12,30 +14,68 @@ import {
 } from '@/src/features/import/strongImporter';
 import { Glow, GradientButton, Screen, SectionLabel, Surface } from '@/src/ui';
 
+type PickedFile = { name: string; uri: string };
+
 export default function ImportScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [file, setFile] = useState<PickedFile | null>(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ImportSummary | null>(null);
 
+  const pickFile = async () => {
+    try {
+      const res = await DocumentPicker.getDocumentAsync({
+        type: ['text/csv', 'text/comma-separated-values', 'public.comma-separated-values-text', '*/*'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (res.canceled) return;
+      const asset = res.assets?.[0];
+      if (!asset) return;
+      setFile({ name: asset.name, uri: asset.uri });
+      setResult(null);
+    } catch (e) {
+      Alert.alert('Could not pick file', e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const runImport = async () => {
-    if (running) return;
+    if (!file || running) return;
     setRunning(true);
     try {
-      const r = await importStrongWorkouts();
+      const csvText = await new File(file.uri).text();
+      const r = await importStrongWorkouts(csvText);
       setResult(r);
       if (r.unknownExercises.length > 0) {
         Alert.alert(
           'Import aborted',
-          `Unknown exercises in your CSV (not yet in catalog):\n\n${r.unknownExercises.slice(0, 10).join(', ')}${r.unknownExercises.length > 10 ? '\n…' : ''}\n\nAdd them to the seed catalog and try again.`,
+          `Unknown exercises in your CSV (not in catalog):\n\n${r.unknownExercises.slice(0, 10).join(', ')}${r.unknownExercises.length > 10 ? '\n…' : ''}\n\nAdd them to the seed catalog and re-import.`,
         );
+        return;
       }
+      const created = r.sessionsCreated;
+      const skipped = r.sessionsSkipped;
+      const msg =
+        created > 0
+          ? `${created} new session${created === 1 ? '' : 's'} and ${r.setsCreated} set${r.setsCreated === 1 ? '' : 's'} imported.${skipped > 0 ? `\n\n${skipped} session${skipped === 1 ? '' : 's'} already in your DB — skipped.` : ''}`
+          : `Nothing new to import — all ${skipped} session${skipped === 1 ? '' : 's'} in the file were already in your DB.`;
+      Alert.alert(created > 0 ? 'Import complete' : 'Nothing imported', msg, [
+        { text: 'Stay here', style: 'cancel' },
+        {
+          text: 'View in History',
+          onPress: () => router.replace('/(tabs)/history'),
+        },
+      ]);
     } catch (e) {
       Alert.alert('Import failed', e instanceof Error ? e.message : String(e));
     } finally {
       setRunning(false);
     }
   };
+
+  const importDone =
+    !!result && result.unknownExercises.length === 0 && !running;
 
   return (
     <Screen>
@@ -55,25 +95,59 @@ export default function ImportScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.heroBlock}>
-          <ThemedText style={styles.heroTitle}>Import from Strong</ThemedText>
+          <ThemedText style={styles.heroTitle}>Import workouts</ThemedText>
           <ThemedText style={styles.heroBody}>
-            One-time import of your historical workouts from Strong app. Each session
-            becomes a Quick Workout in History — no routine setup required.
+            Attach a Strong-format CSV export to populate your history. Each row in the
+            file is parsed into a session + set. No routine setup required.
           </ThemedText>
         </View>
 
         <Surface style={styles.detailCard}>
-          <SectionLabel>What gets imported</SectionLabel>
-          <ThemedText style={styles.bullet}>· Workout sessions with original date + duration</ThemedText>
-          <ThemedText style={styles.bullet}>· Every set: reps, weight, hold seconds</ThemedText>
-          <ThemedText style={styles.bullet}>· Exercise mapping (must already be in catalog)</ThemedText>
-          <ThemedText style={[styles.bullet, { color: palette.textMuted }]}>
-            Sessions are not linked to any routine. Re-running this import will skip any
-            sessions whose start time already exists in your DB.
+          <SectionLabel>Expected columns</SectionLabel>
+          <ThemedText style={styles.mono}>
+            Date, Workout Name, Duration, Exercise Name, Set Order, Weight, Reps,
+            Distance, Seconds, RPE
+          </ThemedText>
+          <ThemedText style={[styles.bullet, { color: palette.textMuted, marginTop: 8 }]}>
+            Exercises in the CSV must already exist in your catalog. Re-importing the
+            same file is safe — sessions are deduped by start-time.
           </ThemedText>
         </Surface>
 
-        {result && result.unknownExercises.length === 0 ? (
+        {file ? (
+          <Surface style={styles.fileCard}>
+            <View style={{ flex: 1 }}>
+              <SectionLabel>Selected file</SectionLabel>
+              <ThemedText style={styles.fileName} numberOfLines={1}>
+                {file.name}
+              </ThemedText>
+            </View>
+            <Pressable
+              onPress={() => {
+                setFile(null);
+                setResult(null);
+              }}
+              hitSlop={10}
+              style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
+              <IconSymbol name="xmark" size={18} color={palette.textDim} />
+            </Pressable>
+          </Surface>
+        ) : (
+          <Pressable
+            onPress={pickFile}
+            style={({ pressed }) => [
+              styles.pickCard,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}>
+            <IconSymbol name="plus" size={22} color={palette.accent} />
+            <ThemedText style={styles.pickLabel}>Choose a CSV file</ThemedText>
+            <ThemedText style={styles.pickSub}>
+              From Files, iCloud Drive, or anywhere
+            </ThemedText>
+          </Pressable>
+        )}
+
+        {result && result.unknownExercises.length === 0 && result.sessionsCreated + result.sessionsSkipped > 0 ? (
           <Surface style={styles.resultCard}>
             <SectionLabel>Done</SectionLabel>
             <View style={styles.resultRow}>
@@ -99,15 +173,24 @@ export default function ImportScreen() {
           </Surface>
         ) : null}
 
-        <GradientButton
-          label={running ? 'Importing…' : 'Run import'}
-          size="lg"
-          onPress={runImport}
-          disabled={running}
-          icon={
-            <IconSymbol name="plus" size={18} color={palette.accentInk} />
-          }
-        />
+        {file && !importDone ? (
+          <GradientButton
+            label={running ? 'Importing…' : 'Run import'}
+            size="lg"
+            onPress={runImport}
+            disabled={running}
+            icon={<IconSymbol name="play.fill" size={18} color={palette.accentInk} />}
+          />
+        ) : null}
+
+        {importDone ? (
+          <View style={styles.doneBanner}>
+            <IconSymbol name="checkmark" size={18} color={palette.accent} />
+            <ThemedText style={styles.doneLabel}>
+              Import done — pick another file to import again
+            </ThemedText>
+          </View>
+        ) : null}
 
         {result && result.sessionsCreated > 0 ? (
           <Pressable
@@ -171,10 +254,50 @@ const styles = StyleSheet.create({
     borderColor: palette.accentEdge,
     borderWidth: 1,
   },
+  mono: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: palette.textDim,
+    fontFamily: undefined, // let ThemedText pick Geist
+  },
   bullet: {
     fontSize: 13,
     color: palette.textDim,
     lineHeight: 19,
+  },
+  pickCard: {
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accentEdge,
+    borderWidth: 1,
+    alignItems: 'center',
+    gap: 6,
+  },
+  pickLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: palette.accent,
+    marginTop: 4,
+  },
+  pickSub: {
+    fontSize: 12,
+    color: palette.textDim,
+  },
+  fileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+    borderColor: palette.accentEdge,
+    borderWidth: 1,
+  },
+  fileName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: palette.text,
+    marginTop: 4,
   },
   resultCard: {
     padding: 16,
@@ -203,6 +326,23 @@ const styles = StyleSheet.create({
   },
   secondaryLabel: {
     fontSize: 14,
+    color: palette.accent,
+    fontWeight: '600',
+  },
+  doneBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accentEdge,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  doneLabel: {
+    fontSize: 13,
     color: palette.accent,
     fontWeight: '600',
   },

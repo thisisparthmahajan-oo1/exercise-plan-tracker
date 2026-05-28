@@ -1,13 +1,8 @@
-// babel-plugin-inline-import doesn't resolve the `@/` alias — needs a relative path.
-// @ts-expect-error — inline-import returns the CSV as a raw string at build time
-import csvText from '../../../data/strong_workouts.csv';
 import { inArray } from 'drizzle-orm';
 
 import { db } from '@/src/db/client';
 import { exercises, setLogs, workoutSessions } from '@/src/db/schema';
 import { uuid } from '@/src/lib/uuid';
-
-const RAW_CSV: string = csvText as string;
 
 type StrongRow = {
   date: string;
@@ -20,6 +15,17 @@ type StrongRow = {
   distance: number;
   seconds: number;
 };
+
+// Normalize a name for matching — collapses smart quotes to straight, trims, strips
+// double spaces. Used both on incoming CSV names and DB-side exercise names so things
+// like `Farmer's Walk` (curly apostrophe) match `Farmer's Walk` (straight).
+function normalizeName(s: string): string {
+  return s
+    .replace(/[‘’ʼ]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 function parseRow(line: string): string[] {
   const out: string[] = [];
@@ -42,8 +48,8 @@ function parseRow(line: string): string[] {
   return out;
 }
 
-function parseCsv(): StrongRow[] {
-  const lines = RAW_CSV.split('\n').slice(1).filter((l) => l.trim().length > 0);
+function parseCsv(text: string): StrongRow[] {
+  const lines = text.split('\n').slice(1).filter((l) => l.trim().length > 0);
   const rows: StrongRow[] = [];
   for (const line of lines) {
     const r = parseRow(line);
@@ -91,17 +97,35 @@ export type ImportSummary = {
   unknownExercises: string[];
 };
 
-export async function importStrongWorkouts(): Promise<ImportSummary> {
-  const rows = parseCsv();
+export async function importStrongWorkouts(csvText: string): Promise<ImportSummary> {
+  const rows = parseCsv(csvText);
+  if (rows.length === 0) {
+    return {
+      totalRows: 0,
+      sessionsCreated: 0,
+      sessionsSkipped: 0,
+      setsCreated: 0,
+      unknownExercises: [],
+    };
+  }
 
-  // Validate all exercises exist up front. Fail loudly if any are missing.
-  const uniqueNames = Array.from(new Set(rows.map((r) => r.exerciseName)));
-  const known = await db
-    .select({ id: exercises.id, name: exercises.name, trackingType: exercises.trackingType })
-    .from(exercises)
-    .where(inArray(exercises.name, uniqueNames));
-  const knownByName = new Map(known.map((e) => [e.name, e]));
-  const unknown = uniqueNames.filter((n) => !knownByName.has(n));
+  // Build a normalized name → exercise row lookup. Pull everything (small table).
+  const allExercises = await db
+    .select({
+      id: exercises.id,
+      name: exercises.name,
+      trackingType: exercises.trackingType,
+    })
+    .from(exercises);
+  const byNormalizedName = new Map(
+    allExercises.map((e) => [normalizeName(e.name), e]),
+  );
+
+  // Validate up front — fail loudly if anything's missing.
+  const uniqueCsvNames = Array.from(new Set(rows.map((r) => r.exerciseName)));
+  const unknown = uniqueCsvNames.filter(
+    (n) => !byNormalizedName.has(normalizeName(n)),
+  );
   if (unknown.length > 0) {
     return {
       totalRows: rows.length,
@@ -112,7 +136,7 @@ export async function importStrongWorkouts(): Promise<ImportSummary> {
     };
   }
 
-  // Group rows into sessions, keyed by (startedAt ms, workout name).
+  // Group rows into sessions keyed by (startedAt ms, workout name).
   type SessionGroup = {
     key: string;
     startedAt: Date;
@@ -139,11 +163,14 @@ export async function importStrongWorkouts(): Promise<ImportSummary> {
   }
 
   // Idempotency: skip sessions whose exact startedAt millisecond already exists in DB.
-  const startedAtMsList = Array.from(groups.values()).map((g) => g.startedAt.getTime());
-  const existingSessions = await db
-    .select({ startedAt: workoutSessions.startedAt })
-    .from(workoutSessions)
-    .where(inArray(workoutSessions.startedAt, startedAtMsList.map((ms) => new Date(ms))));
+  const startedAtDates = Array.from(groups.values()).map((g) => g.startedAt);
+  const existingSessions =
+    startedAtDates.length > 0
+      ? await db
+          .select({ startedAt: workoutSessions.startedAt })
+          .from(workoutSessions)
+          .where(inArray(workoutSessions.startedAt, startedAtDates))
+      : [];
   const existingStartedAt = new Set(
     existingSessions.map((s) => s.startedAt.getTime()),
   );
@@ -152,7 +179,6 @@ export async function importStrongWorkouts(): Promise<ImportSummary> {
   let sessionsSkipped = 0;
   let setsCreated = 0;
 
-  // Insert each new session and its sets.
   for (const g of groups.values()) {
     if (existingStartedAt.has(g.startedAt.getTime())) {
       sessionsSkipped++;
@@ -160,7 +186,8 @@ export async function importStrongWorkouts(): Promise<ImportSummary> {
     }
     const sessionId = uuid();
     const durationMs = parseDurationMs(g.duration);
-    const endedAt = durationMs > 0 ? new Date(g.startedAt.getTime() + durationMs) : g.startedAt;
+    const endedAt =
+      durationMs > 0 ? new Date(g.startedAt.getTime() + durationMs) : g.startedAt;
 
     await db.insert(workoutSessions).values({
       id: sessionId,
@@ -171,7 +198,7 @@ export async function importStrongWorkouts(): Promise<ImportSummary> {
     });
 
     const setRows = g.rows.map((r) => {
-      const ex = knownByName.get(r.exerciseName);
+      const ex = byNormalizedName.get(normalizeName(r.exerciseName));
       if (!ex) throw new Error(`Unknown exercise mid-import: ${r.exerciseName}`);
       const isTime =
         ex.trackingType === 'time' ||
