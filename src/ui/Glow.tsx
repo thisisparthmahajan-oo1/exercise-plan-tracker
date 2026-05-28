@@ -12,7 +12,7 @@ export function Glow({
   intensity?: number;
   top?: number;
 }) {
-  const accentRGBA = (a: number) => `rgba(215, 255, 66, ${a})`;
+  const accentRGBA = (a: number) => `rgba(${palette.accentRgb}, ${a})`;
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { top }]}>
       <LinearGradient

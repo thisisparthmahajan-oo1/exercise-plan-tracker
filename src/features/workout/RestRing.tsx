@@ -3,7 +3,7 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { numeric, palette, radius } from '@/constants/theme';
+import { accentGradient, numeric, palette, radius } from '@/constants/theme';
 import { IconButton } from '@/src/ui';
 
 const SIZE = 140;
@@ -39,8 +39,8 @@ export function RestRing({
         <Svg width={SIZE} height={SIZE}>
           <Defs>
             <LinearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor="#E2FF61" />
-              <Stop offset="1" stopColor="#B8E81F" />
+              <Stop offset="0" stopColor={accentGradient[0]} />
+              <Stop offset="1" stopColor={accentGradient[1]} />
             </LinearGradient>
           </Defs>
           <Circle
