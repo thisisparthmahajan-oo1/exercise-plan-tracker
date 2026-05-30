@@ -82,6 +82,9 @@ export const newSetLogSchema = z.object({
   weight: z.number().min(0).max(2000),
   holdSeconds: z.number().int().min(0).max(7200).optional(),
   rpe: z.number().min(1).max(10).optional(),
+  // Override the timestamp — used when editing past sessions so new/re-committed
+  // sets get the session's original date rather than "now".
+  completedAt: z.date().optional(),
 });
 export type NewSetLogInput = z.infer<typeof newSetLogSchema>;
 

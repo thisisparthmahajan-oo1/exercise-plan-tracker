@@ -120,15 +120,25 @@ export default function SessionDetailScreen() {
         <ThemedText style={styles.customHeaderTitle} numberOfLines={1}>
           {title}
         </ThemedText>
-        <Pressable
-          onPress={confirmDelete}
-          hitSlop={14}
-          style={({ pressed }) => [
-            styles.trashBtn,
-            { opacity: pressed ? 0.5 : 1 },
-          ]}>
-          <IconSymbol name="trash" size={22} color={palette.danger} />
-        </Pressable>
+        <View style={styles.headerRightGroup}>
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/workout/[sessionId]' as const,
+                params: { sessionId: id },
+              })
+            }
+            hitSlop={10}
+            style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.5 : 1 }]}>
+            <IconSymbol name="pencil" size={20} color={palette.text} />
+          </Pressable>
+          <Pressable
+            onPress={confirmDelete}
+            hitSlop={10}
+            style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.5 : 1 }]}>
+            <IconSymbol name="trash" size={20} color={palette.danger} />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -241,6 +251,18 @@ const styles = StyleSheet.create({
     minWidth: 56,
     alignItems: 'flex-end',
     paddingRight: 4,
+  },
+  headerRightGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingRight: 4,
+  },
+  iconBtn: {
+    minHeight: 36,
+    minWidth: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scroll: {
     padding: 20,

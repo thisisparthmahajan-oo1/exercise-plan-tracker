@@ -42,10 +42,12 @@ export default function WorkoutScreen() {
   const [sections, setSections] = useState<Section[] | null>(null);
   const [title, setTitle] = useState('Workout');
   const [startedAt, setStartedAt] = useState<Date | null>(null);
+  const [endedAt, setEndedAt] = useState<Date | null>(null);
   const [picker, setPicker] = useState(false);
   const [ending, setEnding] = useState(false);
   const [lastByExercise, setLastByExercise] = useState<Record<string, SetLog[]>>({});
   const rest = useRestTimer();
+  const isPast = !!endedAt;
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +64,7 @@ export default function WorkoutScreen() {
       if (cancelled) return;
       setTitle(routine?.name ?? 'Quick Workout');
       setStartedAt(session.startedAt);
+      setEndedAt(session.endedAt ?? null);
       setSections(buildInitialSections(session, routine));
     })();
     return () => {
@@ -139,6 +142,7 @@ export default function WorkoutScreen() {
         setNumber: row.setNumber,
         reps: row.reps,
         weight: row.weight,
+        completedAt: isPast ? (endedAt ?? startedAt ?? new Date()) : undefined,
       });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       setSections((prev) =>
@@ -155,7 +159,7 @@ export default function WorkoutScreen() {
             )
           : prev,
       );
-      rest.start(section.restSeconds);
+      if (!isPast) rest.start(section.restSeconds);
     } catch (e) {
       Alert.alert('Could not log set', e instanceof Error ? e.message : String(e));
     }
@@ -173,6 +177,7 @@ export default function WorkoutScreen() {
         reps: 0,
         weight: 0,
         holdSeconds: seconds,
+        completedAt: isPast ? (endedAt ?? startedAt ?? new Date()) : undefined,
       });
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       setSections((prev) =>
@@ -189,7 +194,7 @@ export default function WorkoutScreen() {
             )
           : prev,
       );
-      rest.start(section.restSeconds);
+      if (!isPast) rest.start(section.restSeconds);
     } catch (e) {
       Alert.alert('Could not log set', e instanceof Error ? e.message : String(e));
     }
@@ -297,25 +302,40 @@ export default function WorkoutScreen() {
         <ThemedText style={styles.customHeaderTitle} numberOfLines={1}>
           {title}
         </ThemedText>
-        <Pressable
-          onPress={confirmEnd}
-          disabled={ending}
-          hitSlop={10}
-          style={({ pressed }) => [
-            styles.headerSide,
-            styles.headerEnd,
-            { opacity: ending || pressed ? 0.5 : 1 },
-          ]}>
-          <ThemedText style={styles.endLabel}>End</ThemedText>
-        </Pressable>
+        {isPast ? (
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={10}
+            style={({ pressed }) => [
+              styles.headerSide,
+              styles.headerEnd,
+              { opacity: pressed ? 0.5 : 1 },
+            ]}>
+            <ThemedText style={styles.doneLabel}>Done</ThemedText>
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={confirmEnd}
+            disabled={ending}
+            hitSlop={10}
+            style={({ pressed }) => [
+              styles.headerSide,
+              styles.headerEnd,
+              { opacity: ending || pressed ? 0.5 : 1 },
+            ]}>
+            <ThemedText style={styles.endLabel}>End</ThemedText>
+          </Pressable>
+        )}
       </View>
 
-      {rest.remaining !== null ? (
+      {!isPast && rest.remaining !== null ? (
         <RestRing
           remaining={rest.remaining}
           duration={rest.duration}
           onCancel={rest.cancel}
         />
+      ) : isPast && startedAt ? (
+        <PastSessionHeader startedAt={startedAt} endedAt={endedAt} totals={totals} exerciseCount={sections.length} />
       ) : startedAt ? (
         <WorkoutHero
           startedAt={startedAt}
@@ -358,6 +378,67 @@ export default function WorkoutScreen() {
       />
     </Screen>
   );
+}
+
+function PastSessionHeader({
+  startedAt,
+  endedAt,
+  totals,
+  exerciseCount,
+}: {
+  startedAt: Date;
+  endedAt: Date | null;
+  totals: { sets: number; volume: number };
+  exerciseCount: number;
+}) {
+  const date = startedAt.toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+  const time = startedAt.toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+  const durationMs = endedAt ? endedAt.getTime() - startedAt.getTime() : 0;
+  const durationLabel = durationMs > 0 ? formatDurationShort(durationMs) : null;
+  return (
+    <View style={styles.heroBlock}>
+      <View style={styles.heroTopRow}>
+        <ThemedText style={styles.pastDate}>{date}</ThemedText>
+      </View>
+      <ThemedText style={styles.pastMeta}>
+        {time}
+        {durationLabel ? ` · ${durationLabel}` : ''} · EDITING
+      </ThemedText>
+      <View style={styles.heroStatsRow}>
+        <View style={styles.heroStatCol}>
+          <ThemedText style={styles.heroStatValue}>{totals.sets}</ThemedText>
+          <ThemedText style={styles.heroStatLabel}>SETS</ThemedText>
+        </View>
+        <View style={styles.heroStatDivider} />
+        <View style={styles.heroStatCol}>
+          <ThemedText style={styles.heroStatValue}>
+            {totals.volume > 0 ? Math.round(totals.volume).toLocaleString() : '—'}
+          </ThemedText>
+          <ThemedText style={styles.heroStatLabel}>VOLUME</ThemedText>
+        </View>
+        <View style={styles.heroStatDivider} />
+        <View style={styles.heroStatCol}>
+          <ThemedText style={styles.heroStatValue}>{exerciseCount}</ThemedText>
+          <ThemedText style={styles.heroStatLabel}>EXERCISES</ThemedText>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function formatDurationShort(ms: number): string {
+  const totalMin = Math.max(0, Math.floor(ms / 60_000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 function WorkoutHero({
@@ -752,6 +833,26 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
     lineHeight: 20,
+  },
+  doneLabel: {
+    color: palette.accent,
+    fontWeight: '700',
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  pastDate: {
+    fontSize: 32,
+    lineHeight: 38,
+    color: palette.text,
+    letterSpacing: -0.6,
+    fontWeight: '800',
+  },
+  pastMeta: {
+    fontSize: 11,
+    color: palette.accent,
+    fontWeight: '700',
+    letterSpacing: 1.6,
+    marginTop: -2,
   },
   heroBlock: {
     paddingTop: 18,

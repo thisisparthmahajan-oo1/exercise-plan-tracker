@@ -54,7 +54,7 @@ export const sqliteSessionRepo: SessionRepo = {
       weight: parsed.weight,
       holdSeconds: parsed.holdSeconds ?? null,
       rpe: parsed.rpe ?? null,
-      completedAt: new Date(),
+      completedAt: parsed.completedAt ?? new Date(),
     };
     await db.insert(setLogs).values(row);
     return row;
