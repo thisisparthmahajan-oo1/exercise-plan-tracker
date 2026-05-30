@@ -195,6 +195,33 @@ export default function WorkoutScreen() {
     }
   };
 
+  const uncommitRow = async (sIdx: number, rIdx: number) => {
+    if (!sections) return;
+    const row = sections[sIdx].rows[rIdx];
+    if (!row.committed) return;
+    try {
+      await sessionRepo.deleteSet(row.committed.id);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      setSections((prev) =>
+        prev
+          ? prev.map((s, i) =>
+              i !== sIdx
+                ? s
+                : {
+                    ...s,
+                    rows: s.rows.map((r, j) =>
+                      j !== rIdx ? r : { ...r, committed: undefined },
+                    ),
+                  },
+            )
+          : prev,
+      );
+      rest.cancel();
+    } catch (e) {
+      Alert.alert('Could not undo set', e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const addRow = (sIdx: number) => {
     setSections((prev) =>
       prev
@@ -309,6 +336,7 @@ export default function WorkoutScreen() {
             onUpdateRow={(rIdx, patch) => updateRow(sIdx, rIdx, patch)}
             onCommitRow={(rIdx) => commitRow(sIdx, rIdx)}
             onCommitTimedRow={(rIdx, seconds) => commitTimedRow(sIdx, rIdx, seconds)}
+            onUncommitRow={(rIdx) => uncommitRow(sIdx, rIdx)}
             onStartTimedRow={() => rest.cancel()}
             onAddRow={() => addRow(sIdx)}
           />
@@ -377,6 +405,7 @@ function ExerciseCard({
   onUpdateRow,
   onCommitRow,
   onCommitTimedRow,
+  onUncommitRow,
   onStartTimedRow,
   onAddRow,
 }: {
@@ -385,6 +414,7 @@ function ExerciseCard({
   onUpdateRow: (rIdx: number, patch: Partial<LiveRow>) => void;
   onCommitRow: (rIdx: number) => void;
   onCommitTimedRow: (rIdx: number, seconds: number) => void;
+  onUncommitRow: (rIdx: number) => void;
   onStartTimedRow: () => void;
   onAddRow: () => void;
 }) {
@@ -448,6 +478,7 @@ function ExerciseCard({
             last={lastByNumber.get(row.setNumber)}
             onStart={onStartTimedRow}
             onCommit={(seconds) => onCommitTimedRow(rIdx, seconds)}
+            onUncommit={() => onUncommitRow(rIdx)}
           />
         ) : (
           <SetRow
@@ -457,6 +488,7 @@ function ExerciseCard({
             onChangeReps={(reps) => onUpdateRow(rIdx, { reps })}
             onChangeWeight={(weight) => onUpdateRow(rIdx, { weight })}
             onCommit={() => onCommitRow(rIdx)}
+            onUncommit={() => onUncommitRow(rIdx)}
           />
         ),
       )}
@@ -477,28 +509,44 @@ function SetRow({
   onChangeReps,
   onChangeWeight,
   onCommit,
+  onUncommit,
 }: {
   row: LiveRow;
   last?: SetLog;
   onChangeReps: (n: number) => void;
   onChangeWeight: (n: number) => void;
   onCommit: () => void;
+  onUncommit: () => void;
 }) {
   const done = !!row.committed;
+  // Local text state so the user can type "6." → "6.5" without parseFloat
+  // collapsing the trailing dot and stealing focus. Re-syncs when the row
+  // changes externally (e.g. uncommit, or a fresh row load).
+  const [repsText, setRepsText] = useState(() => String(row.reps));
+  const [weightText, setWeightText] = useState(() => formatWeight(row.weight));
+  const committedKey = row.committed?.id ?? null;
+  useEffect(() => {
+    setRepsText(String(row.reps));
+    setWeightText(formatWeight(row.weight));
+  }, [committedKey, row.reps, row.weight]);
+
   return (
     <View>
       <View style={[styles.setRow, done && styles.setRowDone]}>
         <ThemedText style={[styles.setNum, { width: 28 }]}>{row.setNumber}</ThemedText>
         <View style={[styles.colCell, styles.inputWrap]}>
           <TextInput
-            value={String(row.reps)}
+            value={repsText}
             editable={!done}
             keyboardType="number-pad"
             selectTextOnFocus
             onChangeText={(t) => {
+              setRepsText(t);
               const n = parseInt(t, 10);
-              onChangeReps(Number.isFinite(n) ? n : 0);
+              if (Number.isFinite(n)) onChangeReps(n);
+              else if (t === '') onChangeReps(0);
             }}
+            onBlur={() => setRepsText(String(row.reps))}
             style={[styles.numInput, done && styles.numInputDone]}
           />
           {last ? (
@@ -509,14 +557,17 @@ function SetRow({
         </View>
         <View style={[styles.colCell, styles.inputWrap]}>
           <TextInput
-            value={String(row.weight)}
+            value={weightText}
             editable={!done}
             keyboardType="decimal-pad"
             selectTextOnFocus
             onChangeText={(t) => {
+              setWeightText(t);
               const n = parseFloat(t);
-              onChangeWeight(Number.isFinite(n) ? n : 0);
+              if (Number.isFinite(n)) onChangeWeight(n);
+              else if (t === '') onChangeWeight(0);
             }}
+            onBlur={() => setWeightText(formatWeight(row.weight))}
             style={[styles.numInput, done && styles.numInputDone]}
           />
           {last ? (
@@ -527,8 +578,7 @@ function SetRow({
         </View>
         <Pressable
           hitSlop={4}
-          onPress={onCommit}
-          disabled={done}
+          onPress={done ? onUncommit : onCommit}
           style={({ pressed }) => [
             styles.checkBtn,
             done && styles.checkBtnDone,
@@ -545,6 +595,12 @@ function SetRow({
   );
 }
 
+function formatWeight(w: number): string {
+  // Drop trailing .0 so users see "6" not "6.0" on integer weights; keep
+  // decimals like 6.5 intact.
+  return Number.isInteger(w) ? String(w) : String(w);
+}
+
 function formatHoldSeconds(total: number): string {
   const m = Math.floor(total / 60);
   const s = total % 60;
@@ -557,11 +613,13 @@ function TimedSetRow({
   last,
   onStart,
   onCommit,
+  onUncommit,
 }: {
   row: LiveRow;
   last?: SetLog;
   onStart: () => void;
   onCommit: (seconds: number) => void;
+  onUncommit: () => void;
 }) {
   const done = !!row.committed;
   const timer = useHoldTimer();
@@ -579,9 +637,16 @@ function TimedSetRow({
             {formatHoldSeconds(recorded)}
           </ThemedText>
         </View>
-        <View style={[styles.checkBtn, styles.checkBtnDone]}>
+        <Pressable
+          hitSlop={4}
+          onPress={onUncommit}
+          style={({ pressed }) => [
+            styles.checkBtn,
+            styles.checkBtnDone,
+            { transform: [{ scale: pressed ? 0.92 : 1 }] },
+          ]}>
           <IconSymbol name="checkmark" size={18} color={palette.accentInk} />
-        </View>
+        </Pressable>
       </View>
     );
   }
