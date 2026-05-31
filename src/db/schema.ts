@@ -18,6 +18,8 @@ export const routines = sqliteTable('routines', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   notes: text('notes'),
+  // Manual sort order — drives Routines list display and suggestNextRoutine rotation.
+  position: integer('position').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().default(nowMs),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull().default(nowMs),
 });

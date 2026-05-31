@@ -100,6 +100,9 @@ export interface RoutineRepo {
   create(input: NewRoutineInput): Promise<RoutineWithExercises>;
   update(id: string, input: NewRoutineInput): Promise<RoutineWithExercises>;
   delete(id: string): Promise<void>;
+  // Swap this routine's position with its neighbor in the given direction.
+  // No-op if already at the edge.
+  move(id: string, dir: -1 | 1): Promise<void>;
 }
 
 export type WeeklyStats = {
@@ -117,6 +120,10 @@ export interface SessionRepo {
   get(id: string): Promise<SessionWithSets | null>;
   delete(id: string): Promise<void>;
   lastUsedRoutine(): Promise<Routine | null>;
+  // Returns the routine after the last-used one in the user's canonical
+  // rotation (routines ordered by createdAt). Wraps at the end. Falls back
+  // to the first routine if there's no prior session.
+  suggestNextRoutine(): Promise<Routine | null>;
   lastSetsForExercise(
     exerciseId: string,
     excludeSessionId?: string,

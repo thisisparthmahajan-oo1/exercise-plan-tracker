@@ -127,6 +127,7 @@ export const sqliteSessionRepo: SessionRepo = {
         id: routines.id,
         name: routines.name,
         notes: routines.notes,
+        position: routines.position,
         createdAt: routines.createdAt,
         updatedAt: routines.updatedAt,
       })
@@ -136,6 +137,34 @@ export const sqliteSessionRepo: SessionRepo = {
       .orderBy(desc(workoutSessions.startedAt))
       .limit(1);
     return row[0] ?? null;
+  },
+
+  async suggestNextRoutine(): Promise<Routine | null> {
+    const allRoutines = await db
+      .select()
+      .from(routines)
+      .orderBy(asc(routines.position), asc(routines.createdAt));
+    if (allRoutines.length === 0) return null;
+    if (allRoutines.length === 1) return allRoutines[0];
+
+    const lastSession = await db
+      .select({ routineId: workoutSessions.routineId })
+      .from(workoutSessions)
+      .where(isNotNull(workoutSessions.routineId))
+      .orderBy(desc(workoutSessions.startedAt))
+      .limit(1);
+
+    const lastRoutineId = lastSession[0]?.routineId;
+    if (!lastRoutineId) {
+      // No prior routine session — kick off with the first.
+      return allRoutines[0];
+    }
+    const lastIdx = allRoutines.findIndex((r) => r.id === lastRoutineId);
+    if (lastIdx === -1) {
+      // The previously-used routine was deleted — restart from the top.
+      return allRoutines[0];
+    }
+    return allRoutines[(lastIdx + 1) % allRoutines.length];
   },
 
   async weeklyStats(): Promise<WeeklyStats> {

@@ -151,6 +151,16 @@ export function RoutineForm({
   const removeExercise = (idx: number) => {
     setExercises((prev) => prev.filter((_, i) => i !== idx));
   };
+  const moveExercise = (idx: number, dir: -1 | 1) => {
+    setExercises((prev) => {
+      const target = idx + dir;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = prev.slice();
+      const [item] = next.splice(idx, 1);
+      next.splice(target, 0, item);
+      return next;
+    });
+  };
   const addPickedExercise = (ex: Exercise) => {
     setExercises((prev) => [...prev, draftFromExercise(ex)]);
   };
@@ -224,9 +234,37 @@ export function RoutineForm({
                   <ThemedText style={styles.exMeta}>{e.exerciseEquipment}</ThemedText>
                 ) : null}
               </View>
-              <Pressable hitSlop={10} onPress={() => removeExercise(idx)}>
-                <IconSymbol name="trash" size={18} color={palette.danger} />
-              </Pressable>
+              <View style={styles.exHeaderActions}>
+                <Pressable
+                  hitSlop={6}
+                  onPress={() => moveExercise(idx, -1)}
+                  disabled={idx === 0}
+                  style={({ pressed }) => [
+                    styles.reorderBtn,
+                    { opacity: idx === 0 ? 0.25 : pressed ? 0.5 : 0.8 },
+                  ]}>
+                  <IconSymbol name="chevron.left" size={16} color={palette.text} style={{ transform: [{ rotate: '90deg' }] }} />
+                </Pressable>
+                <Pressable
+                  hitSlop={6}
+                  onPress={() => moveExercise(idx, 1)}
+                  disabled={idx === exercises.length - 1}
+                  style={({ pressed }) => [
+                    styles.reorderBtn,
+                    {
+                      opacity:
+                        idx === exercises.length - 1 ? 0.25 : pressed ? 0.5 : 0.8,
+                    },
+                  ]}>
+                  <IconSymbol name="chevron.left" size={16} color={palette.text} style={{ transform: [{ rotate: '-90deg' }] }} />
+                </Pressable>
+                <Pressable
+                  hitSlop={10}
+                  onPress={() => removeExercise(idx)}
+                  style={({ pressed }) => [styles.reorderBtn, { opacity: pressed ? 0.5 : 1 }]}>
+                  <IconSymbol name="trash" size={18} color={palette.danger} />
+                </Pressable>
+              </View>
             </View>
 
             {e.trackingType === 'time' ? (
@@ -410,6 +448,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+  },
+  exHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  reorderBtn: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   exName: {
     fontSize: 16,

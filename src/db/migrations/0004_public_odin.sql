@@ -1,0 +1,1 @@
+ALTER TABLE `routines` ADD `position` integer DEFAULT 0 NOT NULL;

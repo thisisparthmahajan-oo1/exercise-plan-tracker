@@ -46,7 +46,7 @@ export default function HomeScreen() {
   const routineRepo = useRoutineRepo();
   const { sessions, reload } = useSessionList();
   const [starting, setStarting] = useState(false);
-  const [lastRoutine, setLastRoutine] = useState<RoutineWithExercises | null>(null);
+  const [nextRoutine, setNextRoutine] = useState<RoutineWithExercises | null>(null);
   const [stats, setStats] = useState<WeeklyStats | null>(null);
 
   useFocusEffect(
@@ -54,13 +54,13 @@ export default function HomeScreen() {
       reload();
       let cancelled = false;
       (async () => {
-        const lr = await sessionRepo.lastUsedRoutine();
+        const next = await sessionRepo.suggestNextRoutine();
         if (cancelled) return;
-        if (lr) {
-          const full = await routineRepo.get(lr.id);
-          if (!cancelled) setLastRoutine(full);
+        if (next) {
+          const full = await routineRepo.get(next.id);
+          if (!cancelled) setNextRoutine(full);
         } else {
-          setLastRoutine(null);
+          setNextRoutine(null);
         }
         const s = await sessionRepo.weeklyStats();
         if (!cancelled) setStats(s);
@@ -145,9 +145,9 @@ export default function HomeScreen() {
           />
         ) : (
           <HeroCard
-            routine={lastRoutine}
+            routine={nextRoutine}
             disabled={starting}
-            onStart={() => startWorkout(lastRoutine?.id ?? null)}
+            onStart={() => startWorkout(nextRoutine?.id ?? null)}
             onQuickStart={() => startWorkout(null)}
           />
         )}

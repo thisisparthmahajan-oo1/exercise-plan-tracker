@@ -35,6 +35,7 @@ export const sqliteRoutineRepo: RoutineRepo = {
       id: string;
       name: string;
       notes: string | null;
+      position: number;
       created_at: number;
       updated_at: number;
       exercise_count: number;
@@ -45,6 +46,7 @@ export const sqliteRoutineRepo: RoutineRepo = {
         r.id AS id,
         r.name AS name,
         r.notes AS notes,
+        r.position AS position,
         r.created_at AS created_at,
         r.updated_at AS updated_at,
         (
@@ -62,16 +64,14 @@ export const sqliteRoutineRepo: RoutineRepo = {
           WHERE ws.routine_id = r.id
         ) AS last_session_at
       FROM routines r
-      ORDER BY COALESCE(
-        (SELECT MAX(ws.started_at) FROM workout_sessions ws WHERE ws.routine_id = r.id),
-        r.updated_at
-      ) DESC
+      ORDER BY r.position ASC, r.created_at ASC
     `);
 
     return rows.map((r) => ({
       id: r.id,
       name: r.name,
       notes: r.notes,
+      position: r.position,
       createdAt: new Date(r.created_at),
       updatedAt: new Date(r.updated_at),
       exerciseCount: r.exercise_count,
@@ -91,11 +91,20 @@ export const sqliteRoutineRepo: RoutineRepo = {
     const routineId = uuid();
     const now = new Date();
 
+    // New routines append to the bottom of the manual order.
+    const maxPos = await db
+      .select({ p: routines.position })
+      .from(routines)
+      .orderBy(sql`${routines.position} DESC`)
+      .limit(1);
+    const nextPos = (maxPos[0]?.p ?? -1) + 1;
+
     await db.transaction(async (tx) => {
       await tx.insert(routines).values({
         id: routineId,
         name: parsed.name,
         notes: parsed.notes ?? null,
+        position: nextPos,
         createdAt: now,
         updatedAt: now,
       });
@@ -176,5 +185,41 @@ export const sqliteRoutineRepo: RoutineRepo = {
 
   async delete(id: string) {
     await db.delete(routines).where(eq(routines.id, id));
+  },
+
+  async move(id: string, dir: -1 | 1): Promise<void> {
+    // Order by position then createdAt — matches list() semantics, so the
+    // visible order in the UI is the order we operate on.
+    const all = await db
+      .select({ id: routines.id, position: routines.position })
+      .from(routines)
+      .orderBy(asc(routines.position), asc(routines.createdAt));
+
+    // If positions are degenerate (e.g. all zeros after the column was first
+    // added), normalize them to a sequential 0..n so the swap below works.
+    const positions = all.map((r) => r.position);
+    const hasDuplicates = positions.length !== new Set(positions).size;
+    if (hasDuplicates) {
+      await db.transaction(async (tx) => {
+        for (let i = 0; i < all.length; i++) {
+          await tx
+            .update(routines)
+            .set({ position: i })
+            .where(eq(routines.id, all[i].id));
+        }
+      });
+      for (let i = 0; i < all.length; i++) all[i].position = i;
+    }
+
+    const idx = all.findIndex((r) => r.id === id);
+    if (idx === -1) return;
+    const targetIdx = idx + dir;
+    if (targetIdx < 0 || targetIdx >= all.length) return;
+    const cur = all[idx];
+    const other = all[targetIdx];
+    await db.transaction(async (tx) => {
+      await tx.update(routines).set({ position: other.position }).where(eq(routines.id, cur.id));
+      await tx.update(routines).set({ position: cur.position }).where(eq(routines.id, other.id));
+    });
   },
 };

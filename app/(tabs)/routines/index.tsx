@@ -8,7 +8,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { numeric, palette, radius } from '@/constants/theme';
 import { useRoutineList } from '@/src/features/routines/useRoutineList';
 import { formatRelativeDay } from '@/src/lib/formatDate';
-import { useSessionRepo } from '@/src/repos/RepoContext';
+import { useRoutineRepo, useSessionRepo } from '@/src/repos/RepoContext';
 import type { RoutineSummary } from '@/src/repos/types';
 import { Glow, Screen, Surface } from '@/src/ui';
 
@@ -16,6 +16,7 @@ export default function RoutinesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const sessionRepo = useSessionRepo();
+  const routineRepo = useRoutineRepo();
   const { routines, loading, reload } = useRoutineList();
   const [startingId, setStartingId] = useState<string | null>(null);
 
@@ -76,10 +77,12 @@ export default function RoutinesScreen() {
         data={routines}
         keyExtractor={(r) => r.id}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <RoutineCard
             routine={item}
             starting={startingId === item.id}
+            isFirst={index === 0}
+            isLast={index === routines.length - 1}
             onEdit={() =>
               router.push({
                 pathname: '/(tabs)/routines/[id]' as const,
@@ -87,6 +90,10 @@ export default function RoutinesScreen() {
               })
             }
             onStart={() => startWorkout(item.id)}
+            onMove={async (dir) => {
+              await routineRepo.move(item.id, dir);
+              reload();
+            }}
           />
         )}
         ListEmptyComponent={
@@ -116,19 +123,63 @@ export default function RoutinesScreen() {
 function RoutineCard({
   routine,
   starting,
+  isFirst,
+  isLast,
   onEdit,
   onStart,
+  onMove,
 }: {
   routine: RoutineSummary;
   starting: boolean;
+  isFirst: boolean;
+  isLast: boolean;
   onEdit: () => void;
   onStart: () => void;
+  onMove: (dir: -1 | 1) => void | Promise<void>;
 }) {
   return (
     <Pressable
       onPress={onEdit}
       style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
       <Surface style={styles.card}>
+        <View style={styles.reorderColumn}>
+          <Pressable
+            hitSlop={6}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              if (!isFirst) onMove(-1);
+            }}
+            disabled={isFirst}
+            style={({ pressed }) => [
+              styles.reorderBtn,
+              { opacity: isFirst ? 0.2 : pressed ? 0.5 : 0.8 },
+            ]}>
+            <IconSymbol
+              name="chevron.left"
+              size={14}
+              color={palette.text}
+              style={{ transform: [{ rotate: '90deg' }] }}
+            />
+          </Pressable>
+          <Pressable
+            hitSlop={6}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              if (!isLast) onMove(1);
+            }}
+            disabled={isLast}
+            style={({ pressed }) => [
+              styles.reorderBtn,
+              { opacity: isLast ? 0.2 : pressed ? 0.5 : 0.8 },
+            ]}>
+            <IconSymbol
+              name="chevron.left"
+              size={14}
+              color={palette.text}
+              style={{ transform: [{ rotate: '-90deg' }] }}
+            />
+          </Pressable>
+        </View>
         <View style={styles.cardBody}>
           <ThemedText style={styles.cardName} numberOfLines={1}>
             {routine.name}
@@ -211,10 +262,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingLeft: 8,
+    paddingRight: 16,
+    gap: 8,
     borderColor: palette.accentEdge,
     borderWidth: 1,
+  },
+  reorderColumn: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 2,
+  },
+  reorderBtn: {
+    width: 24,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardBody: {
     flex: 1,
