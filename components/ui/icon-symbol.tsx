@@ -29,6 +29,8 @@ const MAPPING = {
   'chevron.left': 'chevron-left',
   'magnifyingglass': 'search',
   'xmark': 'close',
+  'gearshape.fill': 'settings',
+  'pause.fill': 'pause',
 } as IconMapping;
 
 /**

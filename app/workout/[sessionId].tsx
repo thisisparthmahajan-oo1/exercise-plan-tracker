@@ -27,6 +27,7 @@ import {
 import { useHoldTimer } from '@/src/features/workout/useHoldTimer';
 import { useRestTimer } from '@/src/features/workout/useRestTimer';
 import { useElapsedSince } from '@/src/lib/useElapsedSince';
+import { useSettings } from '@/src/lib/settings';
 import { useRoutineRepo, useSessionRepo } from '@/src/repos/RepoContext';
 import type { Exercise, RoutineWithExercises, SetLog } from '@/src/repos/types';
 import { Glow, PrimaryButton, Screen, Surface } from '@/src/ui';
@@ -47,7 +48,13 @@ export default function WorkoutScreen() {
   const [ending, setEnding] = useState(false);
   const [lastByExercise, setLastByExercise] = useState<Record<string, SetLog[]>>({});
   const rest = useRestTimer();
+  const { restTimerDisabled } = useSettings();
   const isPast = !!endedAt;
+
+  const startRest = (seconds: number) => {
+    if (restTimerDisabled) return;
+    rest.start(seconds);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -159,7 +166,7 @@ export default function WorkoutScreen() {
             )
           : prev,
       );
-      if (!isPast) rest.start(section.restSeconds);
+      if (!isPast) startRest(section.restSeconds);
     } catch (e) {
       Alert.alert('Could not log set', e instanceof Error ? e.message : String(e));
     }
@@ -194,7 +201,7 @@ export default function WorkoutScreen() {
             )
           : prev,
       );
-      if (!isPast) rest.start(section.restSeconds);
+      if (!isPast) startRest(section.restSeconds);
     } catch (e) {
       Alert.alert('Could not log set', e instanceof Error ? e.message : String(e));
     }
@@ -347,6 +354,7 @@ export default function WorkoutScreen() {
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}>
         {sections.map((section, sIdx) => (
           <ExerciseCard
@@ -689,6 +697,24 @@ function formatHoldSeconds(total: number): string {
   return `${s}s`;
 }
 
+type TimeUnit = 'min' | 'sec';
+
+// Format `seconds` as a string the user can edit in the given unit.
+// Seconds → integer string. Minutes → decimal minutes, trimmed.
+function formatForUnit(seconds: number, unit: TimeUnit): string {
+  if (unit === 'sec') return String(Math.round(seconds));
+  const m = seconds / 60;
+  if (Number.isInteger(m)) return String(m);
+  // Two decimals max, no trailing zeros.
+  return (Math.round(m * 100) / 100).toString();
+}
+
+function parseToSeconds(text: string, unit: TimeUnit): number {
+  const n = parseFloat(text);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return unit === 'min' ? Math.round(n * 60) : Math.round(n);
+}
+
 function TimedSetRow({
   row,
   last,
@@ -705,8 +731,60 @@ function TimedSetRow({
   const done = !!row.committed;
   const timer = useHoldTimer();
   const target = row.targetHoldSeconds ?? 30;
+  const [unit, setUnit] = useState<TimeUnit>('min');
+  // Editable input value, shown when timer is not running. Defaults to target.
+  const [manualText, setManualText] = useState(() => formatForUnit(target, 'min'));
+
+  // Re-seed the input whenever this row's identity changes (target shifts,
+  // uncommit, etc.) AND we're not in an active timer flow.
+  const committedKey = row.committed?.id ?? null;
+  useEffect(() => {
+    if (!timer.running && timer.elapsedSeconds === 0) {
+      setManualText(formatForUnit(target, unit));
+    }
+    // unit change is handled separately so we don't clobber edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [committedKey, target]);
+
   const elapsed = timer.elapsedSeconds;
-  const isActive = timer.running || elapsed > 0;
+  const isRunning = timer.running;
+  const isPaused = !isRunning && elapsed > 0;
+
+  const toggleUnit = () => {
+    if (isRunning) return;
+    const seconds = isPaused ? elapsed : parseToSeconds(manualText, unit);
+    const next: TimeUnit = unit === 'min' ? 'sec' : 'min';
+    setUnit(next);
+    setManualText(formatForUnit(seconds, next));
+  };
+
+  const onPlayPause = () => {
+    if (isRunning) {
+      // Seed the input with current elapsed so the paused view is editable
+      // from that value rather than the original target.
+      setManualText(formatForUnit(elapsed, unit));
+      timer.pause();
+      return;
+    }
+    // Idle or paused → start (rest timer must yield).
+    onStart();
+    timer.start();
+  };
+
+  const onCheckmark = () => {
+    let seconds: number;
+    if (isRunning) {
+      seconds = elapsed;
+    } else {
+      // Idle or paused — commit whatever's in the input, so user edits to
+      // the paused value are respected.
+      seconds = parseToSeconds(manualText, unit);
+    }
+    if (seconds <= 0) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    timer.reset();
+    onCommit(seconds);
+  };
 
   if (done) {
     const recorded = row.committed?.holdSeconds ?? row.holdSeconds ?? 0;
@@ -732,73 +810,88 @@ function TimedSetRow({
     );
   }
 
-  const handleAction = () => {
-    if (!timer.running) {
-      if (elapsed === 0) {
-        // Starting a brand new set — cancel any in-flight rest timer.
-        onStart();
-        timer.start();
-      } else {
-        // Was paused → commit
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-        const seconds = elapsed;
-        timer.reset();
-        onCommit(seconds);
-      }
-      return;
-    }
-    // Running → commit
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    const seconds = elapsed;
-    timer.reset();
-    onCommit(seconds);
-  };
-
   const pct = Math.min(100, (elapsed / Math.max(target, 1)) * 100);
+  const canCommit = isRunning || isPaused || parseToSeconds(manualText, unit) > 0;
 
   return (
     <View style={styles.setRow}>
       <ThemedText style={[styles.setNum, { width: 28 }]}>{row.setNumber}</ThemedText>
       <View style={{ flex: 1, gap: 4 }}>
-        <View style={styles.timedTopRow}>
-          <ThemedText
-            style={[styles.timedElapsed, isActive && styles.timedElapsedActive]}>
-            {isActive ? formatHoldSeconds(elapsed) : 'Tap ▶ to start'}
-          </ThemedText>
-          <ThemedText style={styles.timedTarget}>
-            target {target}s
-          </ThemedText>
-        </View>
-        {isActive ? (
-          <View style={styles.timedTrack}>
-            <View
-              style={[
-                styles.timedFill,
-                {
-                  width: `${pct}%`,
-                  backgroundColor: elapsed >= target ? palette.accent : palette.accent,
-                },
-              ]}
+        {isRunning ? (
+          <>
+            <View style={styles.timedTopRow}>
+              <ThemedText style={[styles.timedElapsed, styles.timedElapsedActive]}>
+                {formatHoldSeconds(elapsed)}
+              </ThemedText>
+              <ThemedText style={styles.timedTarget}>
+                target {formatHoldSeconds(target)}
+              </ThemedText>
+            </View>
+            <View style={styles.timedTrack}>
+              <View style={[styles.timedFill, { width: `${pct}%`, backgroundColor: palette.accent }]} />
+            </View>
+          </>
+        ) : (
+          <View style={styles.timedInputRow}>
+            <TextInput
+              value={manualText}
+              keyboardType={unit === 'sec' ? 'number-pad' : 'decimal-pad'}
+              selectTextOnFocus
+              onChangeText={setManualText}
+              onBlur={() => {
+                const s = parseToSeconds(manualText, unit);
+                setManualText(formatForUnit(s, unit));
+              }}
+              style={styles.timedInput}
+              placeholderTextColor={palette.textMuted}
             />
+            <Pressable
+              hitSlop={6}
+              onPress={toggleUnit}
+              style={({ pressed }) => [styles.unitChip, { opacity: pressed ? 0.6 : 1 }]}>
+              <ThemedText style={styles.unitChipText}>{unit}</ThemedText>
+            </Pressable>
+            {isPaused ? (
+              <ThemedText style={styles.timedPaused}>paused</ThemedText>
+            ) : (
+              <ThemedText style={styles.timedTarget}>
+                target {formatHoldSeconds(target)}
+              </ThemedText>
+            )}
           </View>
-        ) : null}
+        )}
         {last?.holdSeconds ? (
-          <ThemedText style={styles.ghost}>prev {last.holdSeconds}s</ThemedText>
+          <ThemedText style={styles.ghost}>prev {formatHoldSeconds(last.holdSeconds)}</ThemedText>
         ) : null}
       </View>
       <Pressable
         hitSlop={4}
-        onPress={handleAction}
+        onPress={onPlayPause}
         style={({ pressed }) => [
-          styles.checkBtn,
-          isActive && styles.checkBtnDone,
+          styles.timerBtn,
+          isRunning && styles.timerBtnRunning,
           { transform: [{ scale: pressed ? 0.92 : 1 }] },
         ]}>
-        {isActive ? (
-          <IconSymbol name="checkmark" size={18} color={palette.accentInk} />
-        ) : (
-          <IconSymbol name="play.fill" size={14} color={palette.textDim} />
-        )}
+        <IconSymbol
+          name={isRunning ? 'pause.fill' : 'play.fill'}
+          size={14}
+          color={isRunning ? palette.accent : palette.textDim}
+        />
+      </Pressable>
+      <Pressable
+        hitSlop={4}
+        onPress={onCheckmark}
+        disabled={!canCommit}
+        style={({ pressed }) => [
+          styles.checkBtn,
+          canCommit && styles.checkBtnDone,
+          { transform: [{ scale: pressed ? 0.92 : 1 }], opacity: canCommit ? 1 : 0.4 },
+        ]}>
+        <IconSymbol
+          name="checkmark"
+          size={18}
+          color={canCommit ? palette.accentInk : palette.textDim}
+        />
       </Pressable>
     </View>
   );
@@ -1018,6 +1111,57 @@ const styles = StyleSheet.create({
   timedFill: {
     height: '100%',
     borderRadius: 2,
+  },
+  timedInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  timedInput: {
+    backgroundColor: palette.surfaceHi,
+    borderRadius: radius.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    minWidth: 64,
+    fontSize: 20,
+    color: palette.text,
+    textAlign: 'center',
+    ...numeric('bold'),
+  },
+  unitChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accentEdge,
+    borderWidth: 1,
+  },
+  unitChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: palette.accent,
+    letterSpacing: 1.2,
+    textTransform: 'lowercase',
+  },
+  timedPaused: {
+    fontSize: 11,
+    color: palette.accent,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  timerBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: palette.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  timerBtnRunning: {
+    borderColor: palette.accent,
+    backgroundColor: palette.accentSoft,
   },
   setRowDone: {
     backgroundColor: palette.accentSoft,

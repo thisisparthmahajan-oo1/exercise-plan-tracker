@@ -58,7 +58,11 @@ export default function NewExerciseScreen() {
         <View style={styles.headerSide} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets>
+
         <Field label="Name" error={errors.name?.message}>
           <Controller
             control={control}

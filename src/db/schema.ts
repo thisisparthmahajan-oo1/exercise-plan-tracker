@@ -60,6 +60,17 @@ export const workoutSessions = sqliteTable('workout_sessions', {
   notes: text('notes'),
 });
 
+// Single-row key-value store for app-wide preferences. Locked to a stable
+// 'singleton' primary key so reads/writes don't need to look up a row.
+export const appSettings = sqliteTable('app_settings', {
+  id: text('id').primaryKey().default('singleton'),
+  // When true, the rest timer is suppressed app-wide — committing a set
+  // won't kick off the rest countdown.
+  restTimerDisabled: integer('rest_timer_disabled', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+});
+
 export const setLogs = sqliteTable('set_logs', {
   id: text('id').primaryKey(),
   sessionId: text('session_id')
@@ -132,3 +143,5 @@ export type WorkoutSession = typeof workoutSessions.$inferSelect;
 export type NewWorkoutSessionRow = typeof workoutSessions.$inferInsert;
 export type SetLog = typeof setLogs.$inferSelect;
 export type NewSetLogRow = typeof setLogs.$inferInsert;
+export type AppSettings = typeof appSettings.$inferSelect;
+export type NewAppSettingsRow = typeof appSettings.$inferInsert;

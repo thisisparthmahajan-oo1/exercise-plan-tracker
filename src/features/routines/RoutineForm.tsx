@@ -200,6 +200,7 @@ export function RoutineForm({
         style={{ flex: 1 }}
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}>
         <Field label="Name">
           <StyledTextInput
@@ -271,14 +272,14 @@ export function RoutineForm({
               <>
                 <View style={styles.setHeader}>
                   <ThemedText style={[styles.setHeaderLabel, { width: 30 }]}>SET</ThemedText>
-                  <ThemedText style={[styles.setHeaderLabel, { flex: 1 }]}>SECONDS</ThemedText>
+                  <ThemedText style={[styles.setHeaderLabel, { flex: 1 }]}>DURATION</ThemedText>
                   <View style={{ width: 28 }} />
                 </View>
                 {e.setPlans.map((sp, sIdx) => (
                   <View key={sIdx} style={styles.setRow}>
                     <ThemedText style={[styles.setNum, { width: 30 }]}>{sIdx + 1}</ThemedText>
-                    <NumericCell
-                      value={sp.holdSeconds ?? 30}
+                    <DurationCell
+                      seconds={sp.holdSeconds ?? 30}
                       onChange={(v) => updateSetPlan(idx, sIdx, { holdSeconds: v })}
                     />
                     <Pressable
@@ -410,6 +411,67 @@ function NumericCell({
   );
 }
 
+type DurationUnit = 'min' | 'sec';
+
+function durationTextForUnit(seconds: number, unit: DurationUnit): string {
+  if (unit === 'sec') return String(Math.round(seconds));
+  const m = seconds / 60;
+  if (Number.isInteger(m)) return String(m);
+  return (Math.round(m * 100) / 100).toString();
+}
+
+function parseDurationToSeconds(text: string, unit: DurationUnit): number {
+  const n = parseFloat(text);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return unit === 'min' ? Math.round(n * 60) : Math.round(n);
+}
+
+// Per-input duration cell with a tappable min/sec toggle. Stored value is
+// always seconds — only the display unit is local UI state.
+function DurationCell({
+  seconds,
+  onChange,
+}: {
+  seconds: number;
+  onChange: (s: number) => void;
+}) {
+  const [unit, setUnit] = useState<DurationUnit>('min');
+  const [text, setText] = useState(() => durationTextForUnit(seconds, 'min'));
+
+  const toggleUnit = () => {
+    const current = parseDurationToSeconds(text, unit);
+    const next: DurationUnit = unit === 'min' ? 'sec' : 'min';
+    setUnit(next);
+    setText(durationTextForUnit(current, next));
+  };
+
+  return (
+    <View style={styles.durationCell}>
+      <TextInput
+        value={text}
+        keyboardType={unit === 'sec' ? 'number-pad' : 'decimal-pad'}
+        selectTextOnFocus
+        onChangeText={(t) => {
+          setText(t);
+          onChange(parseDurationToSeconds(t, unit));
+        }}
+        onBlur={() => {
+          const s = parseDurationToSeconds(text, unit);
+          setText(durationTextForUnit(s, unit));
+        }}
+        style={[styles.numInput, { flex: 1 }]}
+        placeholderTextColor={palette.textMuted}
+      />
+      <Pressable
+        hitSlop={6}
+        onPress={toggleUnit}
+        style={({ pressed }) => [styles.unitChip, { opacity: pressed ? 0.6 : 1 }]}>
+        <ThemedText style={styles.unitChipText}>{unit}</ThemedText>
+      </Pressable>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
@@ -506,6 +568,27 @@ const styles = StyleSheet.create({
     color: palette.text,
     textAlign: 'center',
     ...numeric('bold'),
+  },
+  durationCell: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  unitChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    backgroundColor: palette.accentSoft,
+    borderColor: palette.accentEdge,
+    borderWidth: 1,
+  },
+  unitChipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: palette.accent,
+    letterSpacing: 1.2,
+    textTransform: 'lowercase',
   },
   removeBtn: {
     width: 28,

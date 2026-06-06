@@ -107,6 +107,12 @@ export default function HomeScreen() {
             <ThemedText style={styles.greeting}>{greeting()}</ThemedText>
             <ThemedText style={styles.dateLabel}>{todayLabel()}</ThemedText>
           </View>
+          <Pressable
+            hitSlop={10}
+            onPress={() => router.push('/settings' as never)}
+            style={({ pressed }) => [styles.settingsBtn, { opacity: pressed ? 0.5 : 1 }]}>
+            <IconSymbol name="gearshape.fill" size={22} color={palette.textDim} />
+          </Pressable>
         </View>
 
         {/* Stats */}
@@ -398,6 +404,14 @@ const styles = StyleSheet.create({
   greetingRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
+  },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   greeting: {
     fontSize: 28,

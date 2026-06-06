@@ -22,6 +22,7 @@ import { palette } from '@/constants/theme';
 import { useDbMigrations } from '@/src/db/migrate';
 import { seedExercisesIfNeeded } from '@/src/db/seed';
 import { RepoProvider } from '@/src/repos/RepoContext';
+import { SettingsProvider } from '@/src/lib/settings';
 import { defaultStackOptions } from '@/src/ui/stackOptions';
 
 export const unstable_settings = {
@@ -82,13 +83,16 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={navTheme}>
       <RepoProvider>
-        <Stack screenOptions={defaultStackOptions}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="exercises" options={{ headerShown: false }} />
-          <Stack.Screen name="workout/[sessionId]" options={{ headerShown: false }} />
-          <Stack.Screen name="import" options={{ headerShown: false }} />
-        </Stack>
-        <StatusBar style="light" />
+        <SettingsProvider>
+          <Stack screenOptions={defaultStackOptions}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="exercises" options={{ headerShown: false }} />
+            <Stack.Screen name="workout/[sessionId]" options={{ headerShown: false }} />
+            <Stack.Screen name="import" options={{ headerShown: false }} />
+            <Stack.Screen name="settings" options={{ headerShown: false }} />
+          </Stack>
+          <StatusBar style="light" />
+        </SettingsProvider>
       </RepoProvider>
     </ThemeProvider>
   );
