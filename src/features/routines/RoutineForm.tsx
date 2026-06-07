@@ -248,7 +248,7 @@ export function RoutineForm({
                     styles.reorderBtn,
                     { opacity: idx === 0 ? 0.25 : pressed ? 0.5 : 0.8 },
                   ]}>
-                  <IconSymbol name="chevron.left" size={16} color={palette.text} style={{ transform: [{ rotate: '90deg' }] }} />
+                  <IconSymbol name="chevron.left" size={16} color={accent.text} style={{ transform: [{ rotate: '90deg' }] }} />
                 </Pressable>
                 <Pressable
                   hitSlop={6}
@@ -261,7 +261,7 @@ export function RoutineForm({
                         idx === exercises.length - 1 ? 0.25 : pressed ? 0.5 : 0.8,
                     },
                   ]}>
-                  <IconSymbol name="chevron.left" size={16} color={palette.text} style={{ transform: [{ rotate: '-90deg' }] }} />
+                  <IconSymbol name="chevron.left" size={16} color={accent.text} style={{ transform: [{ rotate: '-90deg' }] }} />
                 </Pressable>
                 <Pressable
                   hitSlop={10}
@@ -297,7 +297,7 @@ export function RoutineForm({
                             e.setPlans.length <= 1 ? 0.2 : pressed ? 0.5 : 0.7,
                         },
                       ]}>
-                      <IconSymbol name="xmark" size={14} color={palette.textDim} />
+                      <IconSymbol name="xmark" size={14} color={accent.textDim} />
                     </Pressable>
                   </View>
                 ))}
@@ -333,7 +333,7 @@ export function RoutineForm({
                             e.setPlans.length <= 1 ? 0.2 : pressed ? 0.5 : 0.7,
                         },
                       ]}>
-                      <IconSymbol name="xmark" size={14} color={palette.textDim} />
+                      <IconSymbol name="xmark" size={14} color={accent.textDim} />
                     </Pressable>
                   </View>
                 ))}
@@ -364,7 +364,7 @@ export function RoutineForm({
         <PrimaryButton
           label="Add exercise"
           variant="ghost"
-          icon={<IconSymbol name="plus" size={16} color={palette.text} />}
+          icon={<IconSymbol name="plus" size={16} color={accent.text} />}
           onPress={() => setPickerOpen(true)}
         />
 
@@ -396,6 +396,7 @@ function NumericCell({
   allowDecimal?: boolean;
   width?: number;
 }) {
+  const accent = useAccent();
   const [text, setText] = useState(String(value));
   return (
     <TextInput
@@ -409,8 +410,12 @@ function NumericCell({
         else if (t === '') onChange(0);
       }}
       onBlur={() => setText(String(value))}
-      style={[styles.numInput, width ? { width, flex: 0 } : { flex: 1 }]}
-      placeholderTextColor={palette.textMuted}
+      style={[
+        styles.numInput,
+        { backgroundColor: accent.surfaceHi, color: accent.text },
+        width ? { width, flex: 0 } : { flex: 1 },
+      ]}
+      placeholderTextColor={accent.textMuted}
     />
   );
 }
@@ -464,8 +469,8 @@ function DurationCell({
           const s = parseDurationToSeconds(text, unit);
           setText(durationTextForUnit(s, unit));
         }}
-        style={[styles.numInput, { flex: 1 }]}
-        placeholderTextColor={palette.textMuted}
+        style={[styles.numInput, { backgroundColor: accent.surfaceHi, color: accent.text, flex: 1 }]}
+        placeholderTextColor={accent.textMuted}
       />
       <Pressable
         hitSlop={6}
@@ -500,11 +505,9 @@ const styles = StyleSheet.create({
   exercisesTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
   },
   exercisesCount: {
     fontSize: 13,
-    color: palette.textMuted,
     fontWeight: '600',
     ...numeric('bold'),
   },
@@ -532,11 +535,9 @@ const styles = StyleSheet.create({
   exName: {
     fontSize: 16,
     fontWeight: '600',
-    color: palette.text,
   },
   exMeta: {
     fontSize: 12,
-    color: palette.textMuted,
     marginTop: 2,
   },
   setHeader: {
@@ -548,7 +549,6 @@ const styles = StyleSheet.create({
   },
   setHeaderLabel: {
     fontSize: 10,
-    color: palette.textMuted,
     fontWeight: '700',
     letterSpacing: 1.2,
     textAlign: 'center',
@@ -562,17 +562,14 @@ const styles = StyleSheet.create({
   },
   setNum: {
     fontSize: 15,
-    color: palette.textDim,
     textAlign: 'center',
     ...numeric('bold'),
   },
   numInput: {
-    backgroundColor: palette.surfaceHi,
     borderRadius: radius.sm,
     paddingVertical: 10,
     paddingHorizontal: 6,
     fontSize: 16,
-    color: palette.text,
     textAlign: 'center',
     ...numeric('bold'),
   },
@@ -621,11 +618,9 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     marginTop: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: palette.borderSoft,
   },
   restLabel: {
     fontSize: 13,
-    color: palette.textDim,
   },
   restControl: {
     flexDirection: 'row',
@@ -634,7 +629,6 @@ const styles = StyleSheet.create({
   },
   restUnit: {
     fontSize: 12,
-    color: palette.textMuted,
     fontWeight: '600',
   },
 });

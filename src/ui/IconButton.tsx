@@ -6,7 +6,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { palette, radius } from '@/constants/theme';
+import { radius } from '@/constants/theme';
 import { useAccent } from '@/src/lib/settings';
 
 export function IconButton({
@@ -29,7 +29,7 @@ export function IconButton({
     variant === 'accent'
       ? accent.accent
       : variant === 'surface'
-        ? palette.surface
+        ? accent.surface
         : 'transparent';
   return (
     <Pressable

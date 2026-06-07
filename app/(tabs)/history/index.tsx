@@ -120,7 +120,6 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 56,
     lineHeight: 62,
-    color: palette.text,
     letterSpacing: -2,
     ...numeric('bold'),
   },
@@ -145,11 +144,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
-    color: palette.text,
   },
   meta: {
     fontSize: 12,
-    color: palette.textDim,
     marginTop: 3,
   },
   volumeBlock: {
@@ -163,7 +160,6 @@ const styles = StyleSheet.create({
   },
   volumeLabel: {
     fontSize: 9,
-    color: palette.textMuted,
     fontWeight: '700',
     letterSpacing: 1.2,
     marginTop: 2,
@@ -196,11 +192,9 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
   },
   emptyText: {
     fontSize: 14,
-    color: palette.textDim,
     textAlign: 'center',
     lineHeight: 20,
   },

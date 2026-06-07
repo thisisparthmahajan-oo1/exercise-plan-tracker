@@ -1,10 +1,11 @@
 import { StyleSheet } from 'react-native';
 
 import { ThemedText, type ThemedTextProps } from '@/components/themed-text';
-import { palette } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 export function SectionLabel({ style, ...rest }: ThemedTextProps) {
-  return <ThemedText {...rest} style={[styles.label, style]} />;
+  const accent = useAccent();
+  return <ThemedText {...rest} style={[styles.label, { color: accent.textMuted }, style]} />;
 }
 
 const styles = StyleSheet.create({
@@ -13,6 +14,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.4,
     textTransform: 'uppercase',
-    color: palette.textMuted,
   },
 });

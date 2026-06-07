@@ -41,7 +41,7 @@ export function BarChart({
                       styles.barFill,
                       {
                         height: Math.max(2, ratio * height),
-                        backgroundColor: palette.surfaceHi,
+                        backgroundColor: accent.surfaceHi,
                       },
                     ]}
                   />
@@ -97,7 +97,6 @@ const styles = StyleSheet.create({
   label: {
     flex: 1,
     fontSize: 10,
-    color: palette.textMuted,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
     fontWeight: '600',

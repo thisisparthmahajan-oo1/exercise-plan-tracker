@@ -305,7 +305,7 @@ export default function WorkoutScreen() {
           onPress={() => router.back()}
           hitSlop={10}
           style={({ pressed }) => [styles.headerSide, { opacity: pressed ? 0.5 : 1 }]}>
-          <IconSymbol name="chevron.left" size={28} color={palette.text} />
+          <IconSymbol name="chevron.left" size={28} color={accent.text} />
         </Pressable>
         <ThemedText style={styles.customHeaderTitle} numberOfLines={1}>
           {title}
@@ -375,7 +375,7 @@ export default function WorkoutScreen() {
         <PrimaryButton
           label="Add exercise"
           variant="ghost"
-          icon={<IconSymbol name="plus" size={16} color={palette.text} />}
+          icon={<IconSymbol name="plus" size={16} color={accent.text} />}
           onPress={() => setPicker(true)}
         />
       </ScrollView>
@@ -427,14 +427,14 @@ function PastSessionHeader({
           <ThemedText style={styles.heroStatValue}>{totals.sets}</ThemedText>
           <ThemedText style={styles.heroStatLabel}>SETS</ThemedText>
         </View>
-        <View style={styles.heroStatDivider} />
+        <View style={[styles.heroStatDivider, { backgroundColor: accent.borderSoft }]} />
         <View style={styles.heroStatCol}>
           <ThemedText style={styles.heroStatValue}>
             {totals.volume > 0 ? Math.round(totals.volume).toLocaleString() : '—'}
           </ThemedText>
           <ThemedText style={styles.heroStatLabel}>VOLUME</ThemedText>
         </View>
-        <View style={styles.heroStatDivider} />
+        <View style={[styles.heroStatDivider, { backgroundColor: accent.borderSoft }]} />
         <View style={styles.heroStatCol}>
           <ThemedText style={styles.heroStatValue}>{exerciseCount}</ThemedText>
           <ThemedText style={styles.heroStatLabel}>EXERCISES</ThemedText>
@@ -475,14 +475,14 @@ function WorkoutHero({
           <ThemedText style={styles.heroStatValue}>{totals.sets}</ThemedText>
           <ThemedText style={styles.heroStatLabel}>SETS</ThemedText>
         </View>
-        <View style={styles.heroStatDivider} />
+        <View style={[styles.heroStatDivider, { backgroundColor: accent.borderSoft }]} />
         <View style={styles.heroStatCol}>
           <ThemedText style={styles.heroStatValue}>
             {totals.volume > 0 ? Math.round(totals.volume).toLocaleString() : '—'}
           </ThemedText>
           <ThemedText style={styles.heroStatLabel}>VOLUME</ThemedText>
         </View>
-        <View style={styles.heroStatDivider} />
+        <View style={[styles.heroStatDivider, { backgroundColor: accent.borderSoft }]} />
         <View style={styles.heroStatCol}>
           <ThemedText style={styles.heroStatValue}>{exerciseCount}</ThemedText>
           <ThemedText style={styles.heroStatLabel}>EXERCISES</ThemedText>
@@ -527,7 +527,7 @@ function ExerciseCard({
             <ThemedText style={styles.exMeta}>{section.exerciseEquipment}</ThemedText>
           ) : null}
         </View>
-        <View style={styles.progressPill}>
+        <View style={[styles.progressPill, { backgroundColor: accent.surfaceHi }]}>
           <ThemedText style={styles.progressText}>
             {completed}/{section.rows.length}
           </ThemedText>
@@ -653,7 +653,7 @@ function SetRow({
           else if (t === '') onChangeReps(0);
         }}
         onBlur={() => setRepsText(String(row.reps))}
-        style={[styles.numInput, done && styles.numInputDone]}
+        style={[styles.numInput, { backgroundColor: accent.surfaceHi, color: accent.text }, done && styles.numInputDone]}
       />
       {last ? (
         <ThemedText style={styles.ghost} numberOfLines={1}>
@@ -677,7 +677,7 @@ function SetRow({
           else if (t === '') onChangeWeight(0);
         }}
         onBlur={() => setWeightText(formatWeight(row.weight))}
-        style={[styles.numInput, done && styles.numInputDone]}
+        style={[styles.numInput, { backgroundColor: accent.surfaceHi, color: accent.text }, done && styles.numInputDone]}
       />
       {last ? (
         <ThemedText style={styles.ghost} numberOfLines={1}>
@@ -717,7 +717,7 @@ function SetRow({
           <IconSymbol
             name="checkmark"
             size={18}
-            color={done ? accent.accentInk : palette.textDim}
+            color={done ? accent.accentInk : accent.textDim}
           />
         </Pressable>
       </View>
@@ -869,7 +869,7 @@ function TimedSetRow({
                 target {formatHoldSeconds(target)}
               </ThemedText>
             </View>
-            <View style={styles.timedTrack}>
+            <View style={[styles.timedTrack, { backgroundColor: accent.surfaceHi }]}>
               <View
                 style={[
                   styles.timedFill,
@@ -889,8 +889,8 @@ function TimedSetRow({
                 const s = parseToSeconds(manualText, unit);
                 setManualText(formatForUnit(s, unit));
               }}
-              style={styles.timedInput}
-              placeholderTextColor={palette.textMuted}
+              style={[styles.timedInput, { backgroundColor: accent.surfaceHi, color: accent.text }]}
+              placeholderTextColor={accent.textMuted}
             />
             <Pressable
               hitSlop={6}
@@ -928,7 +928,7 @@ function TimedSetRow({
         <IconSymbol
           name={isRunning ? 'pause.fill' : 'play.fill'}
           size={14}
-          color={isRunning ? accent.accent : palette.textDim}
+          color={isRunning ? accent.accent : accent.textDim}
         />
       </Pressable>
       <Pressable
@@ -943,7 +943,7 @@ function TimedSetRow({
         <IconSymbol
           name="checkmark"
           size={18}
-          color={canCommit ? accent.accentInk : palette.textDim}
+          color={canCommit ? accent.accentInk : accent.textDim}
         />
       </Pressable>
     </View>
@@ -971,7 +971,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
-    color: palette.text,
     textAlign: 'center',
   },
   endLabel: {
@@ -988,7 +987,6 @@ const styles = StyleSheet.create({
   pastDate: {
     fontSize: 32,
     lineHeight: 38,
-    color: palette.text,
     letterSpacing: -0.6,
     fontWeight: '800',
   },
@@ -1003,7 +1001,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingHorizontal: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: palette.borderSoft,
     alignItems: 'center',
     gap: 6,
   },
@@ -1020,7 +1017,6 @@ const styles = StyleSheet.create({
   heroTimer: {
     fontSize: 52,
     lineHeight: 58,
-    color: palette.text,
     letterSpacing: -2,
     ...numeric('bold'),
   },
@@ -1042,13 +1038,11 @@ const styles = StyleSheet.create({
   heroStatValue: {
     fontSize: 18,
     lineHeight: 22,
-    color: palette.text,
     letterSpacing: -0.4,
     ...numeric('bold'),
   },
   heroStatLabel: {
     fontSize: 10,
-    color: palette.textMuted,
     fontWeight: '700',
     letterSpacing: 1.2,
     marginTop: 2,
@@ -1056,7 +1050,6 @@ const styles = StyleSheet.create({
   heroStatDivider: {
     width: 1,
     height: 24,
-    backgroundColor: palette.borderSoft,
   },
   scroll: {
     padding: 20,
@@ -1077,23 +1070,19 @@ const styles = StyleSheet.create({
   exName: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
     letterSpacing: -0.2,
   },
   exMeta: {
     fontSize: 12,
-    color: palette.textMuted,
     marginTop: 2,
   },
   progressPill: {
-    backgroundColor: palette.surfaceHi,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: radius.pill,
   },
   progressText: {
     fontSize: 12,
-    color: palette.text,
     ...numeric('bold'),
   },
   colHeader: {
@@ -1105,7 +1094,6 @@ const styles = StyleSheet.create({
   },
   colLabel: {
     fontSize: 10,
-    color: palette.textMuted,
     fontWeight: '700',
     letterSpacing: 1.2,
     textAlign: 'center',
@@ -1130,26 +1118,22 @@ const styles = StyleSheet.create({
   timedElapsed: {
     fontSize: 22,
     lineHeight: 26,
-    color: palette.textDim,
     letterSpacing: -0.5,
     ...numeric('bold'),
   },
   timedTarget: {
     fontSize: 11,
-    color: palette.textMuted,
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   timedRecorded: {
     fontSize: 18,
     lineHeight: 22,
-    color: palette.text,
     letterSpacing: -0.4,
     ...numeric('bold'),
   },
   timedTrack: {
     height: 4,
-    backgroundColor: palette.surfaceHi,
     borderRadius: 2,
     overflow: 'hidden',
   },
@@ -1163,13 +1147,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   timedInput: {
-    backgroundColor: palette.surfaceHi,
     borderRadius: radius.sm,
     paddingVertical: 10,
     paddingHorizontal: 10,
     minWidth: 64,
     fontSize: 20,
-    color: palette.text,
     textAlign: 'center',
     ...numeric('bold'),
   },
@@ -1196,7 +1178,6 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: palette.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1206,7 +1187,6 @@ const styles = StyleSheet.create({
   },
   ghost: {
     fontSize: 10,
-    color: palette.textMuted,
     textAlign: 'center',
     fontWeight: '500',
     letterSpacing: 0.3,
@@ -1223,41 +1203,34 @@ const styles = StyleSheet.create({
   lastLabel: {
     fontSize: 9,
     fontWeight: '700',
-    color: palette.textMuted,
     letterSpacing: 1.4,
   },
   lastValue: {
     flex: 1,
     fontSize: 12,
-    color: palette.textDim,
     ...numeric('medium'),
   },
   setNum: {
     fontSize: 16,
-    color: palette.textDim,
     textAlign: 'center',
     ...numeric('bold'),
   },
   numInput: {
-    backgroundColor: palette.surfaceHi,
     borderRadius: radius.sm,
     paddingVertical: 12,
     paddingHorizontal: 6,
     fontSize: 18,
-    color: palette.text,
     textAlign: 'center',
     ...numeric('bold'),
   },
   numInputDone: {
     backgroundColor: 'transparent',
-    color: palette.textDim,
   },
   checkBtn: {
     width: 44,
     height: 44,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: palette.border,
     alignItems: 'center',
     justifyContent: 'center',
   },

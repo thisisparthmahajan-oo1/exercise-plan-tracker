@@ -1,21 +1,25 @@
-/**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
- */
+import { useAccent } from '@/src/lib/settings';
 
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
+// Returns the default fg color for ThemedText / theme primitives, picked
+// against the active theme's scheme. Callers may pass explicit
+// light/dark overrides; the active scheme decides which one wins.
 export function useThemeColor(
   props: { light?: string; dark?: string },
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
+  colorName: 'text' | 'background' | 'icon' | 'tint',
 ) {
-  const theme = useColorScheme() ?? 'light';
-  const colorFromProps = props[theme];
+  const accent = useAccent();
+  const override = accent.scheme === 'light' ? props.light : props.dark;
+  if (override) return override;
 
-  if (colorFromProps) {
-    return colorFromProps;
-  } else {
-    return Colors[theme][colorName];
+  switch (colorName) {
+    case 'background':
+      return accent.bg;
+    case 'icon':
+      return accent.textDim;
+    case 'tint':
+      return accent.accent;
+    case 'text':
+    default:
+      return accent.text;
   }
 }

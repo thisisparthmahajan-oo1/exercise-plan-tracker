@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 
 import { db } from '@/src/db/client';
 import { appSettings } from '@/src/db/schema';
+import { palette } from '@/constants/theme';
 import { DEFAULT_THEME_ID, THEMES, isThemeId, type ThemeId, type ThemeTokens } from '@/constants/themes';
 
 export type AppSettingsState = {
@@ -123,25 +124,87 @@ export function useSettings(): SettingsContextValue {
 
 export type AccentTokens = {
   themeId: ThemeId;
+  scheme: 'dark' | 'light';
   accent: string;         // solid rgb(r,g,b)
   accentInk: string;      // text/icon on solid accent
   accentSoft: string;     // 12% alpha
   accentEdge: string;     // 35% alpha
   accentRgb: string;      // raw "r, g, b" for callers building their own alpha
   accentGradient: readonly [string, string];
+  // Scheme-aware base colors. Dark scheme falls back to the legacy
+  // near-black palette; light scheme flips to off-white surfaces with dark
+  // text, plus per-theme accent-tinted lifted surface.
+  bg: string;
+  surface: string;
+  surfaceHi: string;
+  text: string;
+  textDim: string;
+  textMuted: string;
+  border: string;
+  borderSoft: string;
+  // Glow component reads this — light themes show a far gentler wash.
+  glowIntensity: number;
   theme: ThemeTokens;
 };
 
+// Mix accent RGB toward a base. Used for accent-tinted surfaces on the
+// light themes (subtle hue on white) AND borders/glow tints.
+function mixToward(
+  rgb: string,
+  base: { r: number; g: number; b: number },
+  amount: number,
+): string {
+  const [r, g, b] = rgb.split(',').map((s) => parseInt(s.trim(), 10));
+  const mr = Math.round(base.r * (1 - amount) + r * amount);
+  const mg = Math.round(base.g * (1 - amount) + g * amount);
+  const mb = Math.round(base.b * (1 - amount) + b * amount);
+  return `rgb(${mr}, ${mg}, ${mb})`;
+}
+
+const LIGHT_BASE = { r: 250, g: 250, b: 247 }; // #FAFAF7 — warm off-white bg
+
 function tokensFor(themeId: ThemeId): AccentTokens {
   const theme = THEMES[themeId];
+  const isLight = theme.scheme === 'light';
+
+  // Base colors per scheme. Dark scheme uses the static palette; light
+  // scheme defines its own.
+  const base = isLight
+    ? {
+        bg: '#FAFAF7',
+        surface: '#FFFFFF',
+        // Lifted surface for light themes — accent-tinted off-white so
+        // chips/inputs sit slightly above white cards.
+        surfaceHi: mixToward(theme.rgb, LIGHT_BASE, 0.18),
+        text: '#0E0E12',
+        textDim: '#6A6A75',
+        textMuted: '#A0A0A8',
+        border: '#E5E4DF',
+        borderSoft: '#F0EFEA',
+        glowIntensity: 0.10,
+      }
+    : {
+        bg: palette.bg,
+        surface: palette.surface,
+        surfaceHi: palette.surfaceHi,
+        text: palette.text,
+        textDim: palette.textDim,
+        textMuted: palette.textMuted,
+        border: palette.border,
+        borderSoft: palette.borderSoft,
+        glowIntensity: 0.22,
+      };
+
   return {
     themeId,
+    scheme: theme.scheme,
     accent: `rgb(${theme.rgb})`,
     accentInk: theme.ink,
     accentSoft: `rgba(${theme.rgb}, 0.12)`,
     accentEdge: `rgba(${theme.rgb}, 0.35)`,
     accentRgb: theme.rgb,
     accentGradient: theme.gradient,
+    ...base,
     theme,
   };
 }

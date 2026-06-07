@@ -4,7 +4,6 @@ import { StyleSheet } from 'react-native';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { palette } from '@/constants/theme';
 import { useAccent } from '@/src/lib/settings';
 
 export default function TabLayout() {
@@ -13,12 +12,12 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: accent.accent,
-        tabBarInactiveTintColor: palette.textMuted,
+        tabBarInactiveTintColor: accent.textMuted,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          backgroundColor: palette.bg,
-          borderTopColor: palette.borderSoft,
+          backgroundColor: accent.bg,
+          borderTopColor: accent.borderSoft,
           borderTopWidth: StyleSheet.hairlineWidth,
         },
         tabBarLabelStyle: {

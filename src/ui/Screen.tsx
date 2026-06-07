@@ -1,14 +1,14 @@
 import { StyleSheet, View, type ViewProps } from 'react-native';
 
-import { palette } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 export function Screen({ style, ...rest }: ViewProps) {
-  return <View style={[styles.base, style]} {...rest} />;
+  const accent = useAccent();
+  return <View style={[styles.base, { backgroundColor: accent.bg }, style]} {...rest} />;
 }
 
 const styles = StyleSheet.create({
   base: {
     flex: 1,
-    backgroundColor: palette.bg,
   },
 });

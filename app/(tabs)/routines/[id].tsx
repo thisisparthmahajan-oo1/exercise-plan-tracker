@@ -100,7 +100,7 @@ export default function EditRoutineScreen() {
           onPress={() => router.back()}
           hitSlop={10}
           style={({ pressed }) => [styles.headerSide, { opacity: pressed ? 0.5 : 1 }]}>
-          <IconSymbol name="chevron.left" size={28} color={palette.text} />
+          <IconSymbol name="chevron.left" size={28} color={accent.text} />
         </Pressable>
         <ThemedText style={styles.customHeaderTitle} numberOfLines={1}>
           {routineName}
@@ -164,7 +164,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
-    color: palette.text,
     textAlign: 'center',
   },
   startWrap: {

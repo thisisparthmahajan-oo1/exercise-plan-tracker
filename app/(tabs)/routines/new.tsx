@@ -5,8 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { palette } from '@/constants/theme';
 import { RoutineForm, emptyDefaults } from '@/src/features/routines/RoutineForm';
+import { useAccent } from '@/src/lib/settings';
 import { useRoutineRepo } from '@/src/repos/RepoContext';
 import type { NewRoutineInput } from '@/src/repos/types';
 import { Glow, Screen } from '@/src/ui';
@@ -16,6 +16,7 @@ export default function NewRoutineScreen() {
   const insets = useSafeAreaInsets();
   const repo = useRoutineRepo();
   const [submitting, setSubmitting] = useState(false);
+  const accent = useAccent();
 
   const onSubmit = async (input: NewRoutineInput) => {
     setSubmitting(true);
@@ -37,7 +38,7 @@ export default function NewRoutineScreen() {
           onPress={() => router.back()}
           hitSlop={10}
           style={({ pressed }) => [styles.headerSide, { opacity: pressed ? 0.5 : 1 }]}>
-          <IconSymbol name="chevron.left" size={28} color={palette.text} />
+          <IconSymbol name="chevron.left" size={28} color={accent.text} />
         </Pressable>
         <ThemedText style={styles.customHeaderTitle}>New routine</ThemedText>
         <View style={styles.headerSide} />
@@ -65,7 +66,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
-    color: palette.text,
     textAlign: 'center',
   },
 });

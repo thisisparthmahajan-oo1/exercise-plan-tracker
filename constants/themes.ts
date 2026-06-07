@@ -13,6 +13,10 @@ export type ThemeTokens = {
   rgb: string; // "r, g, b" — composed into rgb()/rgba() at render
   ink: string; // text/icon color shown ON the solid accent
   gradient: readonly [string, string]; // lighter, darker — used in GradientButton, RestRing
+  // 'dark' = near-black bg with white text (purple, blue — matches Apple
+  // hardware-color aesthetic). 'light' = warm off-white bg with dark text
+  // (sage, peach, rose — the pastel themes feel airy and bright).
+  scheme: 'dark' | 'light';
 };
 
 export const THEMES: Record<ThemeId, ThemeTokens> = {
@@ -22,6 +26,7 @@ export const THEMES: Record<ThemeId, ThemeTokens> = {
     rgb: '163, 130, 215', // #A382D7 — iPhone 14 Pro Max Deep Purple, saturated for dark UI
     ink: '#08080A',
     gradient: ['#BCA1E6', '#8467C0'],
+    scheme: 'dark',
   },
   blue: {
     id: 'blue',
@@ -29,6 +34,7 @@ export const THEMES: Record<ThemeId, ThemeTokens> = {
     rgb: '91, 168, 224', // #5BA8E0 — brightened iPhone 13 Pro Max Sierra Blue
     ink: '#08080A',
     gradient: ['#85C0EC', '#3F8CC2'],
+    scheme: 'dark',
   },
   sage: {
     id: 'sage',
@@ -36,6 +42,7 @@ export const THEMES: Record<ThemeId, ThemeTokens> = {
     rgb: '156, 196, 167', // #9CC4A7 — soft sage green
     ink: '#08080A',
     gradient: ['#BAD8C2', '#7AAE8A'],
+    scheme: 'light',
   },
   peach: {
     id: 'peach',
@@ -43,6 +50,7 @@ export const THEMES: Record<ThemeId, ThemeTokens> = {
     rgb: '240, 178, 140', // #F0B28C — warm pastel peach
     ink: '#08080A',
     gradient: ['#F6C8AC', '#E0936A'],
+    scheme: 'light',
   },
   rose: {
     id: 'rose',
@@ -50,6 +58,7 @@ export const THEMES: Record<ThemeId, ThemeTokens> = {
     rgb: '218, 158, 178', // #DA9EB2 — dusty rose
     ink: '#08080A',
     gradient: ['#E8B9CA', '#C3829A'],
+    scheme: 'light',
   },
 };
 

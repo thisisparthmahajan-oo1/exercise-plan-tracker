@@ -170,7 +170,7 @@ function RoutineCard({
             <IconSymbol
               name="chevron.left"
               size={14}
-              color={palette.text}
+              color={accent.text}
               style={{ transform: [{ rotate: '90deg' }] }}
             />
           </Pressable>
@@ -188,7 +188,7 @@ function RoutineCard({
             <IconSymbol
               name="chevron.left"
               size={14}
-              color={palette.text}
+              color={accent.text}
               style={{ transform: [{ rotate: '-90deg' }] }}
             />
           </Pressable>
@@ -201,7 +201,7 @@ function RoutineCard({
             <ThemedText style={styles.cardMeta}>
               {routine.exerciseCount} {routine.exerciseCount === 1 ? 'exercise' : 'exercises'}
             </ThemedText>
-            <View style={styles.metaDot} />
+            <View style={[styles.metaDot, { backgroundColor: accent.textMuted }]} />
             <ThemedText style={styles.cardMeta}>
               {formatRelativeDay(routine.lastSessionAt)}
             </ThemedText>
@@ -253,7 +253,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     fontWeight: '600',
-    color: palette.textDim,
     letterSpacing: 0.2,
   },
   actionLabelPrimary: {
@@ -299,7 +298,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     fontWeight: '700',
-    color: palette.text,
     letterSpacing: -0.2,
   },
   cardMetaRow: {
@@ -310,7 +308,6 @@ const styles = StyleSheet.create({
   },
   cardMeta: {
     fontSize: 12,
-    color: palette.textDim,
     fontWeight: '500',
     ...numeric('medium'),
   },
@@ -318,11 +315,9 @@ const styles = StyleSheet.create({
     width: 3,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: palette.textMuted,
   },
   cardMuscles: {
     fontSize: 12,
-    color: palette.textMuted,
     marginTop: 2,
   },
   playBtn: {
@@ -354,11 +349,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 26,
     fontWeight: '700',
-    color: palette.text,
   },
   emptyText: {
     fontSize: 14,
-    color: palette.textDim,
     textAlign: 'center',
     lineHeight: 20,
     maxWidth: 280,

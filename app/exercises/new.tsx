@@ -19,6 +19,7 @@ export default function NewExerciseScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const repo = useExerciseRepo();
+  const accent = useAccent();
 
   const {
     control,
@@ -53,7 +54,7 @@ export default function NewExerciseScreen() {
           onPress={() => router.back()}
           hitSlop={10}
           style={({ pressed }) => [styles.headerSide, { opacity: pressed ? 0.5 : 1 }]}>
-          <IconSymbol name="chevron.left" size={28} color={palette.text} />
+          <IconSymbol name="chevron.left" size={28} color={accent.text} />
         </Pressable>
         <ThemedText style={styles.customHeaderTitle}>New exercise</ThemedText>
         <View style={styles.headerSide} />
@@ -128,6 +129,7 @@ function Chips({
             onPress={() => onChange(selected ? undefined : g)}
             style={[
               styles.chip,
+              { backgroundColor: accent.surface },
               selected && { backgroundColor: accent.accent, borderColor: accent.accent },
             ]}>
             <ThemedText
@@ -161,7 +163,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
-    color: palette.text,
     textAlign: 'center',
   },
   container: {
@@ -180,12 +181,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: palette.border,
-    backgroundColor: palette.surface,
   },
   chipLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.text,
   },
 });

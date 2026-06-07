@@ -113,7 +113,7 @@ export default function HomeScreen() {
             hitSlop={10}
             onPress={() => router.push('/settings' as never)}
             style={({ pressed }) => [styles.settingsBtn, { opacity: pressed ? 0.5 : 1 }]}>
-            <IconSymbol name="gearshape.fill" size={22} color={palette.textDim} />
+            <IconSymbol name="gearshape.fill" size={22} color={accent.textDim} />
           </Pressable>
         </View>
 
@@ -124,14 +124,14 @@ export default function HomeScreen() {
             value={String(stats?.sessionCount ?? 0)}
             sublabel="this week"
           />
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: accent.borderSoft }]} />
           <StatCell
             label="Volume"
             value={formatVolume(stats?.totalVolume ?? 0)}
             sublabel="7 days · kg"
             accent
           />
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: accent.borderSoft }]} />
           <StatCell
             label="Active"
             value={`${daysActive.filter(Boolean).length}/7`}
@@ -176,6 +176,7 @@ export default function HomeScreen() {
                   <View
                     style={[
                       styles.dot,
+                      { backgroundColor: accent.surfaceHi },
                       active && {
                         backgroundColor: accent.accent,
                         borderColor: accent.accent,
@@ -186,7 +187,7 @@ export default function HomeScreen() {
                   <ThemedText
                     style={[
                       styles.dotLabel,
-                      isToday && { color: palette.text, fontWeight: '700' },
+                      isToday && { color: accent.text, fontWeight: '700' as const },
                     ]}>
                     {dayLabels[i]}
                   </ThemedText>
@@ -307,7 +308,7 @@ function HeroCard({
         {previewNames.length > 0 ? (
           <View style={styles.heroPills}>
             {previewNames.map((name) => (
-              <View key={name} style={styles.heroPill}>
+              <View key={name} style={[styles.heroPill, { backgroundColor: accent.surface }]}>
                 <ThemedText style={styles.heroPillText} numberOfLines={1}>
                   {name}
                 </ThemedText>
@@ -435,13 +436,11 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 28,
     lineHeight: 34,
-    color: palette.text,
     letterSpacing: -0.5,
     fontWeight: '700',
   },
   dateLabel: {
     fontSize: 13,
-    color: palette.textDim,
     marginTop: 4,
   },
 
@@ -460,28 +459,24 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 10,
-    color: palette.textMuted,
     fontWeight: '700',
     letterSpacing: 1.2,
   },
   statValue: {
     fontSize: 24,
     lineHeight: 28,
-    color: palette.text,
     letterSpacing: -0.6,
     marginTop: 2,
     ...numeric('bold'),
   },
   statSub: {
     fontSize: 10,
-    color: palette.textMuted,
     fontWeight: '500',
     marginTop: 1,
   },
   statDivider: {
     width: 1,
     height: 36,
-    backgroundColor: palette.borderSoft,
   },
 
   // Hero
@@ -522,14 +517,12 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: 32,
     lineHeight: 38,
-    color: palette.text,
     letterSpacing: -0.8,
     fontWeight: '800',
     marginTop: -4,
   },
   heroMeta: {
     fontSize: 14,
-    color: palette.textDim,
     marginTop: -6,
   },
   heroPills: {
@@ -542,14 +535,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: radius.pill,
-    backgroundColor: palette.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.border,
     maxWidth: '100%',
   },
   heroPillText: {
     fontSize: 12,
-    color: palette.text,
     fontWeight: '600',
   },
   heroBtnWrap: {
@@ -575,7 +565,6 @@ const styles = StyleSheet.create({
   },
   heroQuickLinkLabel: {
     fontSize: 12,
-    color: palette.textDim,
     fontWeight: '500',
   },
 
@@ -610,7 +599,6 @@ const styles = StyleSheet.create({
   resumeRoutine: {
     flex: 1,
     fontSize: 14,
-    color: palette.textDim,
     fontWeight: '600',
     textAlign: 'right',
   },
@@ -622,7 +610,6 @@ const styles = StyleSheet.create({
   resumeTimer: {
     fontSize: 56,
     lineHeight: 62,
-    color: palette.text,
     letterSpacing: -2,
     ...numeric('bold'),
   },
@@ -660,7 +647,6 @@ const styles = StyleSheet.create({
   },
   sectionMeta: {
     fontSize: 11,
-    color: palette.textMuted,
     fontWeight: '600',
     letterSpacing: 0.4,
   },
@@ -679,13 +665,10 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: palette.surfaceHi,
     borderWidth: 1,
-    borderColor: palette.border,
   },
   dotLabel: {
     fontSize: 11,
-    color: palette.textMuted,
     fontWeight: '600',
   },
 
@@ -704,11 +687,9 @@ const styles = StyleSheet.create({
   recentTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: palette.text,
   },
   recentMeta: {
     fontSize: 12,
-    color: palette.textDim,
     marginTop: 2,
   },
   recentVolume: {
@@ -722,7 +703,6 @@ const styles = StyleSheet.create({
   },
   recentVolumeLabel: {
     fontSize: 9,
-    color: palette.textMuted,
     fontWeight: '700',
     letterSpacing: 1.2,
     marginTop: 1,

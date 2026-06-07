@@ -35,8 +35,8 @@ export function PrimaryButton({
     : isDanger
       ? 'rgba(255, 77, 109, 0.14)'
       : accent.accent;
-  const fg = isGhost ? palette.text : isDanger ? palette.danger : accent.accentInk;
-  const borderColor = isGhost ? palette.border : isDanger ? 'rgba(255, 77, 109, 0.3)' : 'transparent';
+  const fg = isGhost ? accent.text : isDanger ? palette.danger : accent.accentInk;
+  const borderColor = isGhost ? accent.border : isDanger ? 'rgba(255, 77, 109, 0.3)' : 'transparent';
 
   return (
     <Pressable

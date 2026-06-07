@@ -1,6 +1,7 @@
 import { StyleSheet, View, type ViewProps } from 'react-native';
 
-import { palette, radius } from '@/constants/theme';
+import { radius } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 type Variant = 'default' | 'high' | 'plain';
 
@@ -10,17 +11,18 @@ export function Surface({
   style,
   ...rest
 }: ViewProps & { variant?: Variant; bordered?: boolean }) {
+  const accent = useAccent();
   const bg =
     variant === 'high'
-      ? palette.surfaceHi
+      ? accent.surfaceHi
       : variant === 'plain'
-        ? palette.bg
-        : palette.surface;
+        ? accent.bg
+        : accent.surface;
   return (
     <View
       style={[
         styles.base,
-        { backgroundColor: bg, borderColor: bordered ? palette.border : 'transparent' },
+        { backgroundColor: bg, borderColor: bordered ? accent.border : 'transparent' },
         style,
       ]}
       {...rest}

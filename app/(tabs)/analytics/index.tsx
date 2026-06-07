@@ -94,11 +94,11 @@ export default function AnalyticsScreen() {
           <Surface style={[styles.pickerCard, { borderColor: accent.accentEdge }]}>
             <View style={{ flex: 1 }}>
               <SectionLabel>Exercise</SectionLabel>
-              <ThemedText style={styles.pickerValue}>
+              <ThemedText style={[styles.pickerValue, { color: accent.text }]}>
                 {exercise ? exercise.name : 'Tap to choose'}
               </ThemedText>
             </View>
-            <IconSymbol name="chevron.right" size={18} color={palette.textMuted} />
+            <IconSymbol name="chevron.right" size={18} color={accent.textMuted} />
           </Surface>
         </Pressable>
 
@@ -109,8 +109,8 @@ export default function AnalyticsScreen() {
 
         {!exercise ? (
           <View style={styles.emptyWrap}>
-            <ThemedText style={styles.emptyTitle}>No exercise selected</ThemedText>
-            <ThemedText style={styles.emptyText}>
+            <ThemedText style={[styles.emptyTitle, { color: accent.text }]}>No exercise selected</ThemedText>
+            <ThemedText style={[styles.emptyText, { color: accent.textDim }]}>
               Pick one above to see your progress.
             </ThemedText>
           </View>
@@ -120,8 +120,8 @@ export default function AnalyticsScreen() {
           </View>
         ) : points.length === 0 ? (
           <View style={styles.emptyWrap}>
-            <ThemedText style={styles.emptyTitle}>No data yet</ThemedText>
-            <ThemedText style={styles.emptyText}>
+            <ThemedText style={[styles.emptyTitle, { color: accent.text }]}>No data yet</ThemedText>
+            <ThemedText style={[styles.emptyText, { color: accent.textDim }]}>
               Log some sets of {exercise.name} to see your trend here.
             </ThemedText>
           </View>
@@ -132,7 +132,7 @@ export default function AnalyticsScreen() {
                 <SectionLabel>
                   Latest {metric === 'volume' ? 'volume' : 'max weight'}
                 </SectionLabel>
-                <ThemedText style={styles.latestValue}>
+                <ThemedText style={[styles.latestValue, { color: accent.text }]}>
                   {metric === 'volume' ? Math.round(last).toLocaleString() : `${last} kg`}
                 </ThemedText>
               </View>
@@ -161,7 +161,7 @@ export default function AnalyticsScreen() {
                     {deltaPct.toFixed(1)}%
                   </ThemedText>
                 </View>
-                <ThemedText style={styles.deltaCompare}>{deltaLabel(range)}</ThemedText>
+                <ThemedText style={[styles.deltaCompare, { color: accent.textMuted }]}>{deltaLabel(range)}</ThemedText>
               </View>
             </Surface>
 
@@ -197,7 +197,6 @@ const styles = StyleSheet.create({
   pickerValue: {
     fontSize: 18,
     fontWeight: '600',
-    color: palette.text,
     marginTop: 6,
   },
   toggles: {
@@ -213,7 +212,6 @@ const styles = StyleSheet.create({
   latestValue: {
     fontSize: 40,
     lineHeight: 46,
-    color: palette.text,
     letterSpacing: -1.2,
     marginTop: 6,
     ...numeric('bold'),
@@ -238,7 +236,6 @@ const styles = StyleSheet.create({
   },
   deltaCompare: {
     fontSize: 11,
-    color: palette.textMuted,
     fontWeight: '500',
   },
   chartCard: {
@@ -255,11 +252,9 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: palette.text,
   },
   emptyText: {
     fontSize: 14,
-    color: palette.textDim,
     textAlign: 'center',
     lineHeight: 20,
   },

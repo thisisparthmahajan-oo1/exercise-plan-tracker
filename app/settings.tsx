@@ -32,7 +32,7 @@ export default function SettingsScreen() {
           onPress={() => router.back()}
           hitSlop={10}
           style={({ pressed }) => [styles.headerSide, { opacity: pressed ? 0.5 : 1 }]}>
-          <IconSymbol name="chevron.left" size={28} color={palette.text} />
+          <IconSymbol name="chevron.left" size={28} color={accent.text} />
         </Pressable>
         <ThemedText style={styles.customHeaderTitle}>Settings</ThemedText>
         <View style={styles.headerSide} />
@@ -77,9 +77,9 @@ export default function SettingsScreen() {
             <Switch
               value={!restTimerDisabled}
               onValueChange={(on) => setRestTimerDisabled(!on)}
-              trackColor={{ false: palette.surfaceHi, true: accent.accent }}
-              thumbColor={palette.text}
-              ios_backgroundColor={palette.surfaceHi}
+              trackColor={{ false: accent.surfaceHi, true: accent.accent }}
+              thumbColor={accent.scheme === 'light' ? '#FFFFFF' : accent.text}
+              ios_backgroundColor={accent.surfaceHi}
             />
           </Surface>
 
@@ -95,9 +95,9 @@ export default function SettingsScreen() {
             <Switch
               value={repsRightLayout}
               onValueChange={(on) => setRepsRightLayout(on)}
-              trackColor={{ false: palette.surfaceHi, true: accent.accent }}
-              thumbColor={palette.text}
-              ios_backgroundColor={palette.surfaceHi}
+              trackColor={{ false: accent.surfaceHi, true: accent.accent }}
+              thumbColor={accent.scheme === 'light' ? '#FFFFFF' : accent.text}
+              ios_backgroundColor={accent.surfaceHi}
             />
           </Surface>
         </View>
@@ -115,6 +115,7 @@ function ThemeSwatch({
   selected: boolean;
   onPress: () => void;
 }) {
+  const accent = useAccent();
   const theme = THEMES[id];
   const color = `rgb(${theme.rgb})`;
   return (
@@ -134,7 +135,7 @@ function ThemeSwatch({
       <ThemedText
         style={[
           styles.swatchLabel,
-          selected && { color: palette.text, fontWeight: '700' },
+          selected && { color: accent.text, fontWeight: '700' as const },
         ]}
         numberOfLines={1}>
         {theme.label}
@@ -160,7 +161,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
-    color: palette.text,
     textAlign: 'center',
   },
   scroll: {
@@ -188,12 +188,10 @@ const styles = StyleSheet.create({
   rowTitle: {
     fontSize: 15,
     fontWeight: '700',
-    color: palette.text,
     letterSpacing: -0.1,
   },
   rowHint: {
     fontSize: 12,
-    color: palette.textDim,
     lineHeight: 16,
   },
   themeBody: {
@@ -224,7 +222,6 @@ const styles = StyleSheet.create({
   },
   swatchLabel: {
     fontSize: 10,
-    color: palette.textMuted,
     fontWeight: '600',
     letterSpacing: 0.2,
     textAlign: 'center',

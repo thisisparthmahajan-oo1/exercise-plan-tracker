@@ -10,7 +10,7 @@ import {
   GeistMono_500Medium,
   GeistMono_700Bold,
 } from '@expo-google-fonts/geist-mono';
-import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
@@ -79,31 +79,32 @@ export default function RootLayout() {
 
 function ThemedRoot() {
   const accent = useAccent();
-  const navTheme = useMemo(
-    () => ({
-      ...DarkTheme,
+  const isLight = accent.scheme === 'light';
+  const navTheme = useMemo(() => {
+    const base = isLight ? DefaultTheme : DarkTheme;
+    return {
+      ...base,
       colors: {
-        ...DarkTheme.colors,
-        background: palette.bg,
-        card: palette.bg,
+        ...base.colors,
+        background: accent.bg,
+        card: accent.bg,
         primary: accent.accent,
-        text: palette.text,
-        border: palette.border,
+        text: accent.text,
+        border: accent.border,
         notification: palette.danger,
       },
-    }),
-    [accent.accent],
-  );
+    };
+  }, [accent.accent, accent.bg, accent.border, accent.text, isLight]);
   return (
     <ThemeProvider value={navTheme}>
-      <Stack screenOptions={defaultStackOptions}>
+      <Stack screenOptions={{ ...defaultStackOptions, contentStyle: { backgroundColor: accent.bg }, headerStyle: { backgroundColor: accent.bg }, headerTintColor: accent.text }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="exercises" options={{ headerShown: false }} />
         <Stack.Screen name="workout/[sessionId]" options={{ headerShown: false }} />
         <Stack.Screen name="import" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ headerShown: false }} />
       </Stack>
-      <StatusBar style="light" />
+      <StatusBar style={isLight ? 'dark' : 'light'} />
     </ThemeProvider>
   );
 }

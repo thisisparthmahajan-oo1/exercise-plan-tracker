@@ -128,7 +128,7 @@ export function ExercisePickerModal({
         <View style={styles.header}>
           {mode === 'create' ? (
             <IconButton variant="surface" size={36} onPress={() => setMode('list')}>
-              <IconSymbol name="chevron.left" size={18} color={palette.textDim} />
+              <IconSymbol name="chevron.left" size={18} color={accent.textDim} />
             </IconButton>
           ) : (
             <View style={{ width: 36 }} />
@@ -137,21 +137,21 @@ export function ExercisePickerModal({
             {mode === 'create' ? 'New exercise' : 'Pick exercise'}
           </ThemedText>
           <IconButton variant="surface" size={36} onPress={onClose}>
-            <IconSymbol name="xmark" size={16} color={palette.textDim} />
+            <IconSymbol name="xmark" size={16} color={accent.textDim} />
           </IconButton>
         </View>
 
         {mode === 'list' ? (
           <>
             <View style={styles.searchWrap}>
-              <View style={styles.searchBox}>
-                <IconSymbol name="magnifyingglass" size={16} color={palette.textMuted} />
+              <View style={[styles.searchBox, { backgroundColor: accent.surface }]}>
+                <IconSymbol name="magnifyingglass" size={16} color={accent.textMuted} />
                 <TextInput
                   placeholder="Search"
-                  placeholderTextColor={palette.textMuted}
+                  placeholderTextColor={accent.textMuted}
                   value={query}
                   onChangeText={setQuery}
-                  style={styles.searchInput}
+                  style={[styles.searchInput, { color: accent.text }]}
                   autoCorrect={false}
                   clearButtonMode="while-editing"
                 />
@@ -221,7 +221,7 @@ export function ExercisePickerModal({
                           <ThemedText style={styles.rowMeta}>{ex.equipment}</ThemedText>
                         ) : null}
                       </View>
-                      <IconSymbol name="chevron.right" size={16} color={palette.textMuted} />
+                      <IconSymbol name="chevron.right" size={16} color={accent.textMuted} />
                     </Surface>
                   </Pressable>
                 );
@@ -238,8 +238,8 @@ export function ExercisePickerModal({
                 value={formName}
                 onChangeText={setFormName}
                 placeholder="e.g. Incline Cable Fly"
-                placeholderTextColor={palette.textMuted}
-                style={styles.input}
+                placeholderTextColor={accent.textMuted}
+                style={[styles.input, { backgroundColor: accent.surface, color: accent.text }]}
                 autoCapitalize="words"
                 autoFocus
               />
@@ -303,6 +303,7 @@ function Chips({
             onPress={() => onChange(selected ? undefined : g)}
             style={[
               styles.chip,
+              { backgroundColor: accent.surface },
               selected && { backgroundColor: accent.accent, borderColor: accent.accent },
             ]}>
             <ThemedText
@@ -322,7 +323,6 @@ function Chips({
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: palette.bg,
   },
   header: {
     flexDirection: 'row',
@@ -335,7 +335,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     lineHeight: 22,
     fontWeight: '700',
-    color: palette.text,
   },
   searchWrap: {
     paddingHorizontal: 20,
@@ -348,15 +347,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: radius.md,
     gap: 8,
-    backgroundColor: palette.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.border,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     paddingVertical: 2,
-    color: palette.text,
     fontFamily: fonts.medium,
   },
   list: {
@@ -388,7 +384,6 @@ const styles = StyleSheet.create({
   },
   createSub: {
     fontSize: 12,
-    color: palette.textDim,
     marginTop: 2,
   },
   sectionHeader: {
@@ -405,11 +400,9 @@ const styles = StyleSheet.create({
   rowName: {
     fontSize: 15,
     fontWeight: '500',
-    color: palette.text,
   },
   rowMeta: {
     fontSize: 12,
-    color: palette.textMuted,
     marginTop: 2,
   },
 
@@ -424,14 +417,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   input: {
-    backgroundColor: palette.surface,
-    borderColor: palette.border,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: radius.md,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-    color: palette.text,
     fontFamily: fonts.medium,
   },
   chips: {
@@ -444,12 +434,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: palette.border,
-    backgroundColor: palette.surface,
   },
   chipLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.text,
   },
 });

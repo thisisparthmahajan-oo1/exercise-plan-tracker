@@ -117,7 +117,7 @@ export default function SessionDetailScreen() {
           onPress={() => router.back()}
           hitSlop={10}
           style={({ pressed }) => [styles.headerSide, { opacity: pressed ? 0.5 : 1 }]}>
-          <IconSymbol name="chevron.left" size={28} color={palette.text} />
+          <IconSymbol name="chevron.left" size={28} color={accent.text} />
         </Pressable>
         <ThemedText style={styles.customHeaderTitle} numberOfLines={1}>
           {title}
@@ -132,7 +132,7 @@ export default function SessionDetailScreen() {
             }
             hitSlop={10}
             style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.5 : 1 }]}>
-            <IconSymbol name="pencil" size={20} color={palette.text} />
+            <IconSymbol name="pencil" size={20} color={accent.text} />
           </Pressable>
           <Pressable
             onPress={confirmDelete}
@@ -148,13 +148,13 @@ export default function SessionDetailScreen() {
 
         <Surface style={[styles.statsCard, { borderColor: accent.accentEdge }]}>
           <StatBlock label="Sets" value={String(session.sets.length)} />
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: accent.borderSoft }]} />
           <StatBlock
             label="Volume"
             value={Math.round(totalVolume).toLocaleString()}
             accent
           />
-          <View style={styles.statDivider} />
+          <View style={[styles.statDivider, { backgroundColor: accent.borderSoft }]} />
           <StatBlock
             label={durationMs ? 'Duration' : 'Status'}
             value={durationMs ? formatDuration(durationMs) : 'Live'}
@@ -246,7 +246,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
-    color: palette.text,
     textAlign: 'center',
   },
   trashBtn: {
@@ -273,7 +272,6 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 13,
-    color: palette.textDim,
   },
   statsCard: {
     flexDirection: 'row',
@@ -285,7 +283,6 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 36,
-    backgroundColor: palette.borderSoft,
   },
   exCard: {
     padding: 16,
@@ -298,11 +295,9 @@ const styles = StyleSheet.create({
   exName: {
     fontSize: 17,
     fontWeight: '700',
-    color: palette.text,
   },
   exMeta: {
     fontSize: 12,
-    color: palette.textMuted,
     marginTop: 2,
   },
   setHeader: {
@@ -311,12 +306,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: palette.borderSoft,
     gap: 8,
   },
   setHeaderLabel: {
     fontSize: 10,
-    color: palette.textMuted,
     fontWeight: '700',
     letterSpacing: 1.2,
   },
@@ -329,23 +322,19 @@ const styles = StyleSheet.create({
   },
   setCell: {
     fontSize: 14,
-    color: palette.textDim,
     fontVariant: ['tabular-nums'],
   },
   setCellValue: {
     fontSize: 15,
-    color: palette.text,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
   setCellMuted: {
     fontSize: 13,
-    color: palette.textDim,
     fontVariant: ['tabular-nums'],
   },
   empty: {
     marginTop: 40,
     textAlign: 'center',
-    color: palette.textMuted,
   },
 });

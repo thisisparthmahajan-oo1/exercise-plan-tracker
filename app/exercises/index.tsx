@@ -57,7 +57,7 @@ export default function ExercisesScreen() {
           onPress={() => router.back()}
           hitSlop={10}
           style={({ pressed }) => [styles.headerSide, { opacity: pressed ? 0.5 : 1 }]}>
-          <IconSymbol name="chevron.left" size={28} color={palette.text} />
+          <IconSymbol name="chevron.left" size={28} color={accent.text} />
         </Pressable>
         <ThemedText style={styles.customHeaderTitle}>Exercises</ThemedText>
         <Link href="/exercises/new" asChild>
@@ -74,14 +74,14 @@ export default function ExercisesScreen() {
       </View>
 
       <View style={styles.searchWrap}>
-        <View style={styles.searchBox}>
-          <IconSymbol name="magnifyingglass" size={16} color={palette.textMuted} />
+        <View style={[styles.searchBox, { backgroundColor: accent.surface }]}>
+          <IconSymbol name="magnifyingglass" size={16} color={accent.textMuted} />
           <TextInput
             placeholder="Search"
-            placeholderTextColor={palette.textMuted}
+            placeholderTextColor={accent.textMuted}
             value={query}
             onChangeText={setQuery}
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: accent.text }]}
             autoCorrect={false}
             clearButtonMode="while-editing"
           />
@@ -149,7 +149,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
-    color: palette.text,
     textAlign: 'center',
   },
   headerActionLabel: {
@@ -169,15 +168,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: radius.md,
     gap: 8,
-    backgroundColor: palette.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: palette.border,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     paddingVertical: 2,
-    color: palette.text,
   },
   sectionHeader: {
     marginTop: 18,
@@ -194,11 +190,9 @@ const styles = StyleSheet.create({
   rowName: {
     fontSize: 15,
     fontWeight: '500',
-    color: palette.text,
   },
   rowMeta: {
     fontSize: 12,
-    color: palette.textMuted,
     marginTop: 2,
   },
   customPill: {
@@ -215,6 +209,5 @@ const styles = StyleSheet.create({
   empty: {
     marginTop: 40,
     textAlign: 'center',
-    color: palette.textMuted,
   },
 });

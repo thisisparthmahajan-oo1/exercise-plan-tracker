@@ -2,6 +2,7 @@ import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { fonts, palette, radius } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 import { SectionLabel } from './SectionLabel';
 
@@ -24,11 +25,20 @@ export function Field({
 }
 
 export function StyledTextInput({ style, ...rest }: TextInputProps) {
+  const accent = useAccent();
   return (
     <TextInput
-      placeholderTextColor={palette.textMuted}
+      placeholderTextColor={accent.textMuted}
       {...rest}
-      style={[styles.input, style]}
+      style={[
+        styles.input,
+        {
+          backgroundColor: accent.surface,
+          borderColor: accent.border,
+          color: accent.text,
+        },
+        style,
+      ]}
     />
   );
 }
@@ -38,14 +48,11 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   input: {
-    backgroundColor: palette.surface,
-    borderColor: palette.border,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: radius.md,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-    color: palette.text,
     fontFamily: fonts.medium,
   },
   error: {

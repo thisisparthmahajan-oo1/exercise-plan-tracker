@@ -89,7 +89,7 @@ export default function ImportScreen() {
           onPress={() => router.back()}
           hitSlop={10}
           style={({ pressed }) => [styles.headerSide, { opacity: pressed ? 0.5 : 1 }]}>
-          <IconSymbol name="chevron.left" size={28} color={palette.text} />
+          <IconSymbol name="chevron.left" size={28} color={accent.text} />
         </Pressable>
         <ThemedText style={styles.customHeaderTitle}>Import data</ThemedText>
         <View style={styles.headerSide} />
@@ -110,7 +110,7 @@ export default function ImportScreen() {
             Date, Workout Name, Duration, Exercise Name, Set Order, Weight, Reps,
             Distance, Seconds, RPE
           </ThemedText>
-          <ThemedText style={[styles.bullet, { color: palette.textMuted, marginTop: 8 }]}>
+          <ThemedText style={[styles.bullet, { color: accent.textMuted, marginTop: 8 }]}>
             Exercises in the CSV must already exist in your catalog. Re-importing the
             same file is safe — sessions are deduped by start-time.
           </ThemedText>
@@ -131,7 +131,7 @@ export default function ImportScreen() {
               }}
               hitSlop={10}
               style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
-              <IconSymbol name="xmark" size={18} color={palette.textDim} />
+              <IconSymbol name="xmark" size={18} color={accent.textDim} />
             </Pressable>
           </Surface>
         ) : (
@@ -230,7 +230,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
-    color: palette.text,
     textAlign: 'center',
   },
   scroll: {
@@ -246,13 +245,11 @@ const styles = StyleSheet.create({
     fontSize: 26,
     lineHeight: 32,
     fontWeight: '800',
-    color: palette.text,
     letterSpacing: -0.5,
   },
   heroBody: {
     fontSize: 14,
     lineHeight: 20,
-    color: palette.textDim,
   },
   detailCard: {
     padding: 16,
@@ -262,12 +259,10 @@ const styles = StyleSheet.create({
   mono: {
     fontSize: 12,
     lineHeight: 18,
-    color: palette.textDim,
     fontFamily: undefined, // let ThemedText pick Geist
   },
   bullet: {
     fontSize: 13,
-    color: palette.textDim,
     lineHeight: 19,
   },
   pickCard: {
@@ -285,7 +280,6 @@ const styles = StyleSheet.create({
   },
   pickSub: {
     fontSize: 12,
-    color: palette.textDim,
   },
   fileCard: {
     flexDirection: 'row',
@@ -297,7 +291,6 @@ const styles = StyleSheet.create({
   fileName: {
     fontSize: 15,
     fontWeight: '600',
-    color: palette.text,
     marginTop: 4,
   },
   resultCard: {
@@ -312,11 +305,9 @@ const styles = StyleSheet.create({
   },
   resultLabel: {
     fontSize: 13,
-    color: palette.textDim,
   },
   resultValue: {
     fontSize: 18,
-    color: palette.text,
     fontWeight: '700',
     ...numeric('bold'),
   },

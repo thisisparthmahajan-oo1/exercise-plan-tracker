@@ -37,7 +37,7 @@ export function RestRing({
           <ThemedText style={[styles.label, { color: accent.accent }]}>RESTING</ThemedText>
         </View>
         <IconButton variant="surface" size={32} onPress={onCancel}>
-          <IconSymbol name="xmark" size={14} color={palette.textDim} />
+          <IconSymbol name="xmark" size={14} color={accent.textDim} />
         </IconButton>
       </View>
 
@@ -53,7 +53,7 @@ export function RestRing({
             cx={SIZE / 2}
             cy={SIZE / 2}
             r={R}
-            stroke={palette.surfaceHi}
+            stroke={accent.surfaceHi}
             strokeWidth={STROKE}
             fill="none"
           />
@@ -130,13 +130,11 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 44,
     lineHeight: 50,
-    color: palette.text,
     letterSpacing: -1.6,
     ...numeric('bold'),
   },
   unit: {
     fontSize: 11,
-    color: palette.textDim,
     letterSpacing: 1.2,
     fontWeight: '600',
     marginTop: -4,
@@ -144,7 +142,6 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontSize: 11,
-    color: palette.textMuted,
     marginTop: 10,
     letterSpacing: 0.5,
   },
