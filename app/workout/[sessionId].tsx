@@ -27,7 +27,7 @@ import {
 import { useHoldTimer } from '@/src/features/workout/useHoldTimer';
 import { useRestTimer } from '@/src/features/workout/useRestTimer';
 import { useElapsedSince } from '@/src/lib/useElapsedSince';
-import { useSettings } from '@/src/lib/settings';
+import { useAccent, useSettings } from '@/src/lib/settings';
 import { useRoutineRepo, useSessionRepo } from '@/src/repos/RepoContext';
 import type { Exercise, RoutineWithExercises, SetLog } from '@/src/repos/types';
 import { Glow, PrimaryButton, Screen, Surface } from '@/src/ui';
@@ -48,7 +48,8 @@ export default function WorkoutScreen() {
   const [ending, setEnding] = useState(false);
   const [lastByExercise, setLastByExercise] = useState<Record<string, SetLog[]>>({});
   const rest = useRestTimer();
-  const { restTimerDisabled } = useSettings();
+  const { restTimerDisabled, repsRightLayout } = useSettings();
+  const accent = useAccent();
   const isPast = !!endedAt;
 
   const startRest = (seconds: number) => {
@@ -289,7 +290,7 @@ export default function WorkoutScreen() {
     return (
       <Screen style={styles.center}>
         <Stack.Screen options={{ title }} />
-        <ActivityIndicator color={palette.accent} />
+        <ActivityIndicator color={accent.accent} />
       </Screen>
     );
   }
@@ -318,7 +319,7 @@ export default function WorkoutScreen() {
               styles.headerEnd,
               { opacity: pressed ? 0.5 : 1 },
             ]}>
-            <ThemedText style={styles.doneLabel}>Done</ThemedText>
+            <ThemedText style={[styles.doneLabel, { color: accent.accent }]}>Done</ThemedText>
           </Pressable>
         ) : (
           <Pressable
@@ -361,6 +362,7 @@ export default function WorkoutScreen() {
             key={section.exerciseId}
             section={section}
             lastSets={lastByExercise[section.exerciseId] ?? []}
+            repsRightLayout={repsRightLayout}
             onUpdateRow={(rIdx, patch) => updateRow(sIdx, rIdx, patch)}
             onCommitRow={(rIdx) => commitRow(sIdx, rIdx)}
             onCommitTimedRow={(rIdx, seconds) => commitTimedRow(sIdx, rIdx, seconds)}
@@ -399,6 +401,7 @@ function PastSessionHeader({
   totals: { sets: number; volume: number };
   exerciseCount: number;
 }) {
+  const accent = useAccent();
   const date = startedAt.toLocaleDateString(undefined, {
     weekday: 'short',
     day: 'numeric',
@@ -415,7 +418,7 @@ function PastSessionHeader({
       <View style={styles.heroTopRow}>
         <ThemedText style={styles.pastDate}>{date}</ThemedText>
       </View>
-      <ThemedText style={styles.pastMeta}>
+      <ThemedText style={[styles.pastMeta, { color: accent.accent }]}>
         {time}
         {durationLabel ? ` · ${durationLabel}` : ''} · EDITING
       </ThemedText>
@@ -458,14 +461,15 @@ function WorkoutHero({
   totals: { sets: number; volume: number };
   exerciseCount: number;
 }) {
+  const accent = useAccent();
   const elapsed = useElapsedSince(startedAt);
   return (
     <View style={styles.heroBlock}>
       <View style={styles.heroTopRow}>
-        <View style={styles.heroLivePulse} />
+        <View style={[styles.heroLivePulse, { backgroundColor: accent.accent }]} />
         <ThemedText style={styles.heroTimer}>{elapsed}</ThemedText>
       </View>
-      <ThemedText style={styles.heroLabel}>ELAPSED</ThemedText>
+      <ThemedText style={[styles.heroLabel, { color: accent.accent }]}>ELAPSED</ThemedText>
       <View style={styles.heroStatsRow}>
         <View style={styles.heroStatCol}>
           <ThemedText style={styles.heroStatValue}>{totals.sets}</ThemedText>
@@ -491,6 +495,7 @@ function WorkoutHero({
 function ExerciseCard({
   section,
   lastSets,
+  repsRightLayout,
   onUpdateRow,
   onCommitRow,
   onCommitTimedRow,
@@ -500,6 +505,7 @@ function ExerciseCard({
 }: {
   section: Section;
   lastSets: SetLog[];
+  repsRightLayout: boolean;
   onUpdateRow: (rIdx: number, patch: Partial<LiveRow>) => void;
   onCommitRow: (rIdx: number) => void;
   onCommitTimedRow: (rIdx: number, seconds: number) => void;
@@ -507,12 +513,13 @@ function ExerciseCard({
   onStartTimedRow: () => void;
   onAddRow: () => void;
 }) {
+  const accent = useAccent();
   const isTimed = section.trackingType === 'time';
   const completed = section.rows.filter((r) => r.committed).length;
   const lastByNumber = new Map<number, SetLog>();
   for (const s of lastSets) lastByNumber.set(s.setNumber, s);
   return (
-    <Surface style={styles.card}>
+    <Surface style={[styles.card, { borderColor: accent.accentEdge }]}>
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
           <ThemedText style={styles.exName}>{section.exerciseName}</ThemedText>
@@ -553,8 +560,17 @@ function ExerciseCard({
       ) : (
         <View style={styles.colHeader}>
           <ThemedText style={[styles.colLabel, { width: 28 }]}>SET</ThemedText>
-          <ThemedText style={[styles.colLabel, styles.colCell]}>REPS</ThemedText>
-          <ThemedText style={[styles.colLabel, styles.colCell]}>KG</ThemedText>
+          {repsRightLayout ? (
+            <>
+              <ThemedText style={[styles.colLabel, styles.colCell]}>KG</ThemedText>
+              <ThemedText style={[styles.colLabel, styles.colCell]}>REPS</ThemedText>
+            </>
+          ) : (
+            <>
+              <ThemedText style={[styles.colLabel, styles.colCell]}>REPS</ThemedText>
+              <ThemedText style={[styles.colLabel, styles.colCell]}>KG</ThemedText>
+            </>
+          )}
           <View style={{ width: 44 }} />
         </View>
       )}
@@ -574,6 +590,7 @@ function ExerciseCard({
             key={rIdx}
             row={row}
             last={lastByNumber.get(row.setNumber)}
+            repsRightLayout={repsRightLayout}
             onChangeReps={(reps) => onUpdateRow(rIdx, { reps })}
             onChangeWeight={(weight) => onUpdateRow(rIdx, { weight })}
             onCommit={() => onCommitRow(rIdx)}
@@ -585,8 +602,8 @@ function ExerciseCard({
       <Pressable
         onPress={onAddRow}
         style={({ pressed }) => [styles.addSetBtn, { opacity: pressed ? 0.5 : 1 }]}>
-        <IconSymbol name="plus" size={14} color={palette.accent} />
-        <ThemedText style={styles.addSetLabel}>Add set</ThemedText>
+        <IconSymbol name="plus" size={14} color={accent.accent} />
+        <ThemedText style={[styles.addSetLabel, { color: accent.accent }]}>Add set</ThemedText>
       </Pressable>
     </Surface>
   );
@@ -595,6 +612,7 @@ function ExerciseCard({
 function SetRow({
   row,
   last,
+  repsRightLayout,
   onChangeReps,
   onChangeWeight,
   onCommit,
@@ -602,11 +620,13 @@ function SetRow({
 }: {
   row: LiveRow;
   last?: SetLog;
+  repsRightLayout: boolean;
   onChangeReps: (n: number) => void;
   onChangeWeight: (n: number) => void;
   onCommit: () => void;
   onUncommit: () => void;
 }) {
+  const accent = useAccent();
   const done = !!row.committed;
   // Local text state so the user can type "6." → "6.5" without parseFloat
   // collapsing the trailing dot and stealing focus. Re-syncs when the row
@@ -619,64 +639,85 @@ function SetRow({
     setWeightText(formatWeight(row.weight));
   }, [committedKey, row.reps, row.weight]);
 
+  const repsCell = (
+    <View style={[styles.colCell, styles.inputWrap]}>
+      <TextInput
+        value={repsText}
+        editable={!done}
+        keyboardType="number-pad"
+        selectTextOnFocus
+        onChangeText={(t) => {
+          setRepsText(t);
+          const n = parseInt(t, 10);
+          if (Number.isFinite(n)) onChangeReps(n);
+          else if (t === '') onChangeReps(0);
+        }}
+        onBlur={() => setRepsText(String(row.reps))}
+        style={[styles.numInput, done && styles.numInputDone]}
+      />
+      {last ? (
+        <ThemedText style={styles.ghost} numberOfLines={1}>
+          prev {last.reps}
+        </ThemedText>
+      ) : null}
+    </View>
+  );
+
+  const weightCell = (
+    <View style={[styles.colCell, styles.inputWrap]}>
+      <TextInput
+        value={weightText}
+        editable={!done}
+        keyboardType="decimal-pad"
+        selectTextOnFocus
+        onChangeText={(t) => {
+          setWeightText(t);
+          const n = parseFloat(t);
+          if (Number.isFinite(n)) onChangeWeight(n);
+          else if (t === '') onChangeWeight(0);
+        }}
+        onBlur={() => setWeightText(formatWeight(row.weight))}
+        style={[styles.numInput, done && styles.numInputDone]}
+      />
+      {last ? (
+        <ThemedText style={styles.ghost} numberOfLines={1}>
+          prev {last.weight}
+        </ThemedText>
+      ) : null}
+    </View>
+  );
+
   return (
     <View>
-      <View style={[styles.setRow, done && styles.setRowDone]}>
+      <View
+        style={[
+          styles.setRow,
+          done && { backgroundColor: accent.accentSoft },
+        ]}>
         <ThemedText style={[styles.setNum, { width: 28 }]}>{row.setNumber}</ThemedText>
-        <View style={[styles.colCell, styles.inputWrap]}>
-          <TextInput
-            value={repsText}
-            editable={!done}
-            keyboardType="number-pad"
-            selectTextOnFocus
-            onChangeText={(t) => {
-              setRepsText(t);
-              const n = parseInt(t, 10);
-              if (Number.isFinite(n)) onChangeReps(n);
-              else if (t === '') onChangeReps(0);
-            }}
-            onBlur={() => setRepsText(String(row.reps))}
-            style={[styles.numInput, done && styles.numInputDone]}
-          />
-          {last ? (
-            <ThemedText style={styles.ghost} numberOfLines={1}>
-              prev {last.reps}
-            </ThemedText>
-          ) : null}
-        </View>
-        <View style={[styles.colCell, styles.inputWrap]}>
-          <TextInput
-            value={weightText}
-            editable={!done}
-            keyboardType="decimal-pad"
-            selectTextOnFocus
-            onChangeText={(t) => {
-              setWeightText(t);
-              const n = parseFloat(t);
-              if (Number.isFinite(n)) onChangeWeight(n);
-              else if (t === '') onChangeWeight(0);
-            }}
-            onBlur={() => setWeightText(formatWeight(row.weight))}
-            style={[styles.numInput, done && styles.numInputDone]}
-          />
-          {last ? (
-            <ThemedText style={styles.ghost} numberOfLines={1}>
-              prev {last.weight}
-            </ThemedText>
-          ) : null}
-        </View>
+        {repsRightLayout ? (
+          <>
+            {weightCell}
+            {repsCell}
+          </>
+        ) : (
+          <>
+            {repsCell}
+            {weightCell}
+          </>
+        )}
         <Pressable
           hitSlop={4}
           onPress={done ? onUncommit : onCommit}
           style={({ pressed }) => [
             styles.checkBtn,
-            done && styles.checkBtnDone,
+            done && { backgroundColor: accent.accent, borderColor: accent.accent },
             { transform: [{ scale: pressed ? 0.92 : 1 }] },
           ]}>
           <IconSymbol
             name="checkmark"
             size={18}
-            color={done ? palette.accentInk : palette.textDim}
+            color={done ? accent.accentInk : palette.textDim}
           />
         </Pressable>
       </View>
@@ -728,6 +769,7 @@ function TimedSetRow({
   onCommit: (seconds: number) => void;
   onUncommit: () => void;
 }) {
+  const accent = useAccent();
   const done = !!row.committed;
   const timer = useHoldTimer();
   const target = row.targetHoldSeconds ?? 30;
@@ -789,7 +831,7 @@ function TimedSetRow({
   if (done) {
     const recorded = row.committed?.holdSeconds ?? row.holdSeconds ?? 0;
     return (
-      <View style={[styles.setRow, styles.setRowDone]}>
+      <View style={[styles.setRow, { backgroundColor: accent.accentSoft }]}>
         <ThemedText style={[styles.setNum, { width: 28 }]}>{row.setNumber}</ThemedText>
         <View style={{ flex: 1 }}>
           <ThemedText style={styles.timedRecorded}>
@@ -801,10 +843,10 @@ function TimedSetRow({
           onPress={onUncommit}
           style={({ pressed }) => [
             styles.checkBtn,
-            styles.checkBtnDone,
+            { backgroundColor: accent.accent, borderColor: accent.accent },
             { transform: [{ scale: pressed ? 0.92 : 1 }] },
           ]}>
-          <IconSymbol name="checkmark" size={18} color={palette.accentInk} />
+          <IconSymbol name="checkmark" size={18} color={accent.accentInk} />
         </Pressable>
       </View>
     );
@@ -820,7 +862,7 @@ function TimedSetRow({
         {isRunning ? (
           <>
             <View style={styles.timedTopRow}>
-              <ThemedText style={[styles.timedElapsed, styles.timedElapsedActive]}>
+              <ThemedText style={[styles.timedElapsed, { color: accent.accent }]}>
                 {formatHoldSeconds(elapsed)}
               </ThemedText>
               <ThemedText style={styles.timedTarget}>
@@ -828,7 +870,12 @@ function TimedSetRow({
               </ThemedText>
             </View>
             <View style={styles.timedTrack}>
-              <View style={[styles.timedFill, { width: `${pct}%`, backgroundColor: palette.accent }]} />
+              <View
+                style={[
+                  styles.timedFill,
+                  { width: `${pct}%`, backgroundColor: accent.accent },
+                ]}
+              />
             </View>
           </>
         ) : (
@@ -848,11 +895,14 @@ function TimedSetRow({
             <Pressable
               hitSlop={6}
               onPress={toggleUnit}
-              style={({ pressed }) => [styles.unitChip, { opacity: pressed ? 0.6 : 1 }]}>
-              <ThemedText style={styles.unitChipText}>{unit}</ThemedText>
+              style={({ pressed }) => [
+                styles.unitChip,
+                { backgroundColor: accent.accentSoft, borderColor: accent.accentEdge, opacity: pressed ? 0.6 : 1 },
+              ]}>
+              <ThemedText style={[styles.unitChipText, { color: accent.accent }]}>{unit}</ThemedText>
             </Pressable>
             {isPaused ? (
-              <ThemedText style={styles.timedPaused}>paused</ThemedText>
+              <ThemedText style={[styles.timedPaused, { color: accent.accent }]}>paused</ThemedText>
             ) : (
               <ThemedText style={styles.timedTarget}>
                 target {formatHoldSeconds(target)}
@@ -869,13 +919,16 @@ function TimedSetRow({
         onPress={onPlayPause}
         style={({ pressed }) => [
           styles.timerBtn,
-          isRunning && styles.timerBtnRunning,
+          isRunning && {
+            borderColor: accent.accent,
+            backgroundColor: accent.accentSoft,
+          },
           { transform: [{ scale: pressed ? 0.92 : 1 }] },
         ]}>
         <IconSymbol
           name={isRunning ? 'pause.fill' : 'play.fill'}
           size={14}
-          color={isRunning ? palette.accent : palette.textDim}
+          color={isRunning ? accent.accent : palette.textDim}
         />
       </Pressable>
       <Pressable
@@ -884,13 +937,13 @@ function TimedSetRow({
         disabled={!canCommit}
         style={({ pressed }) => [
           styles.checkBtn,
-          canCommit && styles.checkBtnDone,
+          canCommit && { backgroundColor: accent.accent, borderColor: accent.accent },
           { transform: [{ scale: pressed ? 0.92 : 1 }], opacity: canCommit ? 1 : 0.4 },
         ]}>
         <IconSymbol
           name="checkmark"
           size={18}
-          color={canCommit ? palette.accentInk : palette.textDim}
+          color={canCommit ? accent.accentInk : palette.textDim}
         />
       </Pressable>
     </View>
@@ -928,7 +981,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   doneLabel: {
-    color: palette.accent,
     fontWeight: '700',
     fontSize: 16,
     lineHeight: 20,
@@ -942,7 +994,6 @@ const styles = StyleSheet.create({
   },
   pastMeta: {
     fontSize: 11,
-    color: palette.accent,
     fontWeight: '700',
     letterSpacing: 1.6,
     marginTop: -2,
@@ -965,7 +1016,6 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: palette.accent,
   },
   heroTimer: {
     fontSize: 52,
@@ -976,7 +1026,6 @@ const styles = StyleSheet.create({
   },
   heroLabel: {
     fontSize: 10,
-    color: palette.accent,
     fontWeight: '700',
     letterSpacing: 1.6,
     marginTop: -2,
@@ -1017,7 +1066,6 @@ const styles = StyleSheet.create({
   card: {
     padding: 16,
     gap: 8,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   cardHeader: {
@@ -1086,9 +1134,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     ...numeric('bold'),
   },
-  timedElapsedActive: {
-    color: palette.accent,
-  },
   timedTarget: {
     fontSize: 11,
     color: palette.textMuted,
@@ -1132,20 +1177,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radius.pill,
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   unitChipText: {
     fontSize: 11,
     fontWeight: '700',
-    color: palette.accent,
     letterSpacing: 1.2,
     textTransform: 'lowercase',
   },
   timedPaused: {
     fontSize: 11,
-    color: palette.accent,
     fontWeight: '700',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
@@ -1158,13 +1199,6 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  timerBtnRunning: {
-    borderColor: palette.accent,
-    backgroundColor: palette.accentSoft,
-  },
-  setRowDone: {
-    backgroundColor: palette.accentSoft,
   },
   inputWrap: {
     alignItems: 'stretch',
@@ -1227,10 +1261,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkBtnDone: {
-    backgroundColor: palette.accent,
-    borderColor: palette.accent,
-  },
   addSetBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1242,7 +1272,6 @@ const styles = StyleSheet.create({
   addSetLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.accent,
     letterSpacing: 0.2,
   },
 });

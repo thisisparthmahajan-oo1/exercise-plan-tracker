@@ -2,6 +2,7 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { numeric, palette } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 export function StatBlock({
   label,
@@ -14,12 +15,13 @@ export function StatBlock({
   accent?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  const accentTokens = useAccent();
   return (
     <View style={[styles.container, style]}>
       <ThemedText
         style={[
           styles.value,
-          { color: accent ? palette.accent : palette.text },
+          { color: accent ? accentTokens.accent : palette.text },
         ]}>
         {value}
       </ThemedText>

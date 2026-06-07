@@ -5,12 +5,14 @@ import { StyleSheet } from 'react-native';
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { palette } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 export default function TabLayout() {
+  const accent = useAccent();
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: palette.accent,
+        tabBarActiveTintColor: accent.accent,
         tabBarInactiveTintColor: palette.textMuted,
         headerShown: false,
         tabBarButton: HapticTab,

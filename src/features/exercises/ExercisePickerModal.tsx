@@ -14,6 +14,7 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { fonts, palette, radius } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 import { useExerciseRepo } from '@/src/repos/RepoContext';
 import type { Exercise } from '@/src/repos/types';
 import { GradientButton, IconButton, SectionLabel, Surface } from '@/src/ui';
@@ -55,6 +56,7 @@ export function ExercisePickerModal({
   excludeIds?: string[];
 }) {
   const exerciseRepo = useExerciseRepo();
+  const accent = useAccent();
 
   const [mode, setMode] = useState<'list' | 'create'>('list');
   const [query, setQuery] = useState('');
@@ -172,12 +174,20 @@ export function ExercisePickerModal({
                     <Pressable
                       onPress={openCreate}
                       style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-                      <View style={styles.createCard}>
-                        <View style={styles.createIcon}>
-                          <IconSymbol name="plus" size={18} color={palette.accent} />
+                      <View
+                        style={[
+                          styles.createCard,
+                          {
+                            backgroundColor: accent.accentSoft,
+                            borderColor: accent.accentEdge,
+                          },
+                        ]}>
+                        <View
+                          style={[styles.createIcon, { backgroundColor: accent.accent }]}>
+                          <IconSymbol name="plus" size={18} color={accent.accent} />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <ThemedText style={styles.createTitle}>
+                          <ThemedText style={[styles.createTitle, { color: accent.accent }]}>
                             {queryTrim
                               ? `Create "${queryTrim}"`
                               : 'Create new exercise'}
@@ -186,7 +196,7 @@ export function ExercisePickerModal({
                             Add a custom exercise to your catalog
                           </ThemedText>
                         </View>
-                        <IconSymbol name="chevron.right" size={16} color={palette.accent} />
+                        <IconSymbol name="chevron.right" size={16} color={accent.accent} />
                       </View>
                     </Pressable>
                   );
@@ -282,6 +292,7 @@ function Chips({
   value: string | undefined;
   onChange: (v: string | undefined) => void;
 }) {
+  const accent = useAccent();
   return (
     <View style={styles.chips}>
       {items.map((g) => {
@@ -290,9 +301,15 @@ function Chips({
           <Pressable
             key={g}
             onPress={() => onChange(selected ? undefined : g)}
-            style={[styles.chip, selected && styles.chipSelected]}>
+            style={[
+              styles.chip,
+              selected && { backgroundColor: accent.accent, borderColor: accent.accent },
+            ]}>
             <ThemedText
-              style={[styles.chipLabel, selected && styles.chipLabelSelected]}>
+              style={[
+                styles.chipLabel,
+                selected && { color: accent.accentInk, fontWeight: '700' },
+              ]}>
               {g}
             </ThemedText>
           </Pressable>
@@ -350,8 +367,6 @@ const styles = StyleSheet.create({
   createCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
     borderRadius: radius.md,
     paddingVertical: 12,
@@ -363,7 +378,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: palette.accent,
     alignItems: 'center',
     justifyContent: 'center',
     opacity: 0.18,
@@ -371,7 +385,6 @@ const styles = StyleSheet.create({
   createTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: palette.accent,
   },
   createSub: {
     fontSize: 12,
@@ -434,17 +447,9 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     backgroundColor: palette.surface,
   },
-  chipSelected: {
-    backgroundColor: palette.accent,
-    borderColor: palette.accent,
-  },
   chipLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: palette.text,
-  },
-  chipLabelSelected: {
-    color: palette.accentInk,
-    fontWeight: '700',
   },
 });

@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 
 import { palette } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 export function Glow({
   height = 320,
@@ -12,7 +13,8 @@ export function Glow({
   intensity?: number;
   top?: number;
 }) {
-  const accentRGBA = (a: number) => `rgba(${palette.accentRgb}, ${a})`;
+  const accent = useAccent();
+  const accentRGBA = (a: number) => `rgba(${accent.accentRgb}, ${a})`;
   return (
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { top }]}>
       <LinearGradient

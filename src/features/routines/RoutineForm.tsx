@@ -11,6 +11,7 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { numeric, palette, radius } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 import { ExercisePickerModal } from '@/src/features/exercises/ExercisePickerModal';
 import type {
   Exercise,
@@ -110,6 +111,7 @@ export function RoutineForm({
   const [notes, setNotes] = useState(defaults.notes);
   const [exercises, setExercises] = useState<RoutineExerciseDraft[]>(defaults.exercises);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const accent = useAccent();
 
   const updateExercise = (idx: number, patch: Partial<RoutineExerciseDraft>) => {
     setExercises((prev) => prev.map((e, i) => (i === idx ? { ...e, ...patch } : e)));
@@ -227,7 +229,9 @@ export function RoutineForm({
         </View>
 
         {exercises.map((e, idx) => (
-          <Surface key={`${e.exerciseId}-${idx}`} style={styles.exCard}>
+          <Surface
+            key={`${e.exerciseId}-${idx}`}
+            style={[styles.exCard, { borderColor: accent.accentEdge }]}>
             <View style={styles.exHeader}>
               <View style={{ flex: 1 }}>
                 <ThemedText style={styles.exName}>{e.exerciseName}</ThemedText>
@@ -339,8 +343,8 @@ export function RoutineForm({
             <Pressable
               onPress={() => addSetPlan(idx)}
               style={({ pressed }) => [styles.addSetBtn, { opacity: pressed ? 0.5 : 1 }]}>
-              <IconSymbol name="plus" size={14} color={palette.accent} />
-              <ThemedText style={styles.addSetLabel}>Add set</ThemedText>
+              <IconSymbol name="plus" size={14} color={accent.accent} />
+              <ThemedText style={[styles.addSetLabel, { color: accent.accent }]}>Add set</ThemedText>
             </Pressable>
 
             <View style={styles.restRow}>
@@ -435,6 +439,7 @@ function DurationCell({
   seconds: number;
   onChange: (s: number) => void;
 }) {
+  const accent = useAccent();
   const [unit, setUnit] = useState<DurationUnit>('min');
   const [text, setText] = useState(() => durationTextForUnit(seconds, 'min'));
 
@@ -465,8 +470,11 @@ function DurationCell({
       <Pressable
         hitSlop={6}
         onPress={toggleUnit}
-        style={({ pressed }) => [styles.unitChip, { opacity: pressed ? 0.6 : 1 }]}>
-        <ThemedText style={styles.unitChipText}>{unit}</ThemedText>
+        style={({ pressed }) => [
+          styles.unitChip,
+          { backgroundColor: accent.accentSoft, borderColor: accent.accentEdge, opacity: pressed ? 0.6 : 1 },
+        ]}>
+        <ThemedText style={[styles.unitChipText, { color: accent.accent }]}>{unit}</ThemedText>
       </Pressable>
     </View>
   );
@@ -503,7 +511,6 @@ const styles = StyleSheet.create({
   exCard: {
     padding: 14,
     gap: 8,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   exHeader: {
@@ -579,14 +586,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radius.pill,
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   unitChipText: {
     fontSize: 11,
     fontWeight: '700',
-    color: palette.accent,
     letterSpacing: 1.2,
     textTransform: 'lowercase',
   },
@@ -607,7 +611,6 @@ const styles = StyleSheet.create({
   addSetLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: palette.accent,
     letterSpacing: 0.2,
   },
   restRow: {

@@ -7,6 +7,7 @@ import m0002 from './0002_careless_ezekiel_stane.sql';
 import m0003 from './0003_fat_agent_zero.sql';
 import m0004 from './0004_public_odin.sql';
 import m0005 from './0005_overconfident_killer_shrike.sql';
+import m0006 from './0006_hot_ego.sql';
 
   export default {
     journal,
@@ -16,7 +17,8 @@ m0001,
 m0002,
 m0003,
 m0004,
-m0005
+m0005,
+m0006
     }
   }
   

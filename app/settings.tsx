@@ -5,13 +5,22 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { palette, radius } from '@/constants/theme';
-import { useSettings } from '@/src/lib/settings';
+import { THEMES, THEME_ORDER, type ThemeId } from '@/constants/themes';
+import { useAccent, useSettings } from '@/src/lib/settings';
 import { Glow, Screen, SectionLabel, Surface } from '@/src/ui';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { restTimerDisabled, setRestTimerDisabled } = useSettings();
+  const accent = useAccent();
+  const {
+    restTimerDisabled,
+    setRestTimerDisabled,
+    themeId,
+    setThemeId,
+    repsRightLayout,
+    setRepsRightLayout,
+  } = useSettings();
 
   return (
     <Screen>
@@ -33,20 +42,60 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
+          <SectionLabel>Theme</SectionLabel>
+          <Surface style={[styles.row, { borderColor: accent.accentEdge }]}>
+            <View style={styles.themeBody}>
+              <ThemedText style={styles.rowTitle}>{THEMES[themeId].label}</ThemedText>
+              <ThemedText style={styles.rowHint}>
+                Tap a swatch to switch the accent everywhere.
+              </ThemedText>
+              <View style={styles.swatchRow}>
+                {THEME_ORDER.map((id) => (
+                  <ThemeSwatch
+                    key={id}
+                    id={id}
+                    selected={id === themeId}
+                    onPress={() => setThemeId(id)}
+                  />
+                ))}
+              </View>
+            </View>
+          </Surface>
+        </View>
+
+        <View style={styles.section}>
           <SectionLabel>Workout</SectionLabel>
-          <Surface style={styles.row}>
+          <Surface style={[styles.row, { borderColor: accent.accentEdge }]}>
             <View style={styles.rowBody}>
               <ThemedText style={styles.rowTitle}>Rest timer</ThemedText>
               <ThemedText style={styles.rowHint}>
                 {restTimerDisabled
-                  ? 'Off — committing a set won\'t start a countdown'
+                  ? 'Off — committing a set will not start a countdown'
                   : 'On — runs after each committed set'}
               </ThemedText>
             </View>
             <Switch
               value={!restTimerDisabled}
               onValueChange={(on) => setRestTimerDisabled(!on)}
-              trackColor={{ false: palette.surfaceHi, true: palette.accent }}
+              trackColor={{ false: palette.surfaceHi, true: accent.accent }}
+              thumbColor={palette.text}
+              ios_backgroundColor={palette.surfaceHi}
+            />
+          </Surface>
+
+          <Surface style={[styles.row, { borderColor: accent.accentEdge }]}>
+            <View style={styles.rowBody}>
+              <ThemedText style={styles.rowTitle}>Reps on the right</ThemedText>
+              <ThemedText style={styles.rowHint}>
+                {repsRightLayout
+                  ? 'KG on left, REPS on right'
+                  : 'REPS on left, KG on right (default)'}
+              </ThemedText>
+            </View>
+            <Switch
+              value={repsRightLayout}
+              onValueChange={(on) => setRepsRightLayout(on)}
+              trackColor={{ false: palette.surfaceHi, true: accent.accent }}
               thumbColor={palette.text}
               ios_backgroundColor={palette.surfaceHi}
             />
@@ -54,6 +103,43 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
     </Screen>
+  );
+}
+
+function ThemeSwatch({
+  id,
+  selected,
+  onPress,
+}: {
+  id: ThemeId;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const theme = THEMES[id];
+  const color = `rgb(${theme.rgb})`;
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={6}
+      style={({ pressed }) => [
+        styles.swatchOuter,
+        selected && { borderColor: color },
+        { opacity: pressed ? 0.7 : 1 },
+      ]}>
+      <View style={[styles.swatch, { backgroundColor: color }]}>
+        {selected ? (
+          <IconSymbol name="checkmark" size={14} color={theme.ink} />
+        ) : null}
+      </View>
+      <ThemedText
+        style={[
+          styles.swatchLabel,
+          selected && { color: palette.text, fontWeight: '700' },
+        ]}
+        numberOfLines={1}>
+        {theme.label}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -92,7 +178,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     gap: 14,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
     borderRadius: radius.lg,
   },
@@ -110,5 +195,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: palette.textDim,
     lineHeight: 16,
+  },
+  themeBody: {
+    flex: 1,
+    gap: 10,
+  },
+  swatchRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginTop: 6,
+  },
+  swatchOuter: {
+    alignItems: 'center',
+    gap: 6,
+    padding: 4,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    width: 56,
+  },
+  swatch: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swatchLabel: {
+    fontSize: 10,
+    color: palette.textMuted,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    textAlign: 'center',
   },
 });

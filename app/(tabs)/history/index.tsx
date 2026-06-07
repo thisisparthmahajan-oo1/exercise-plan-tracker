@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { numeric, palette } from '@/constants/theme';
 import { useSessionList } from '@/src/features/history/useSessionList';
+import { useAccent } from '@/src/lib/settings';
 import { formatDuration, formatSessionDate } from '@/src/lib/formatDate';
 import { Glow, Screen, Surface } from '@/src/ui';
 
@@ -13,6 +14,7 @@ export default function HistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { sessions, loading, reload } = useSessionList();
+  const accent = useAccent();
 
   useFocusEffect(
     useCallback(() => {
@@ -32,7 +34,7 @@ export default function HistoryScreen() {
           sessions.length > 0 ? (
             <View style={styles.totalHeader}>
               <ThemedText style={styles.totalValue}>{sessions.length}</ThemedText>
-              <ThemedText style={styles.totalLabel}>
+              <ThemedText style={[styles.totalLabel, { color: accent.accent }]}>
                 {sessions.length === 1 ? 'WORKOUT LOGGED' : 'WORKOUTS LOGGED'}
               </ThemedText>
             </View>
@@ -53,16 +55,20 @@ export default function HistoryScreen() {
                   params: { id: item.id },
                 })
               }>
-              <Surface style={styles.row}>
+              <Surface style={[styles.row, { borderColor: accent.accentEdge }]}>
                 <View style={{ flex: 1 }}>
                   <View style={styles.titleRow}>
                     <ThemedText style={styles.title}>
                       {item.routineName ?? 'Quick Workout'}
                     </ThemedText>
                     {inProgress ? (
-                      <View style={styles.livePill}>
-                        <View style={styles.liveDot} />
-                        <ThemedText style={styles.liveLabel}>LIVE</ThemedText>
+                      <View
+                        style={[
+                          styles.livePill,
+                          { backgroundColor: accent.accentSoft, borderColor: accent.accentEdge },
+                        ]}>
+                        <View style={[styles.liveDot, { backgroundColor: accent.accent }]} />
+                        <ThemedText style={[styles.liveLabel, { color: accent.accent }]}>LIVE</ThemedText>
                       </View>
                     ) : null}
                   </View>
@@ -74,7 +80,7 @@ export default function HistoryScreen() {
                 </View>
                 {item.totalVolume > 0 ? (
                   <View style={styles.volumeBlock}>
-                    <ThemedText style={styles.volumeValue}>
+                    <ThemedText style={[styles.volumeValue, { color: accent.accent }]}>
                       {Math.round(item.totalVolume).toLocaleString()}
                     </ThemedText>
                     <ThemedText style={styles.volumeLabel}>VOL</ThemedText>
@@ -120,7 +126,6 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     fontSize: 11,
-    color: palette.accent,
     fontWeight: '700',
     letterSpacing: 1.6,
   },
@@ -130,7 +135,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     gap: 12,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   titleRow: {
@@ -154,7 +158,6 @@ const styles = StyleSheet.create({
   volumeValue: {
     fontSize: 22,
     lineHeight: 26,
-    color: palette.accent,
     letterSpacing: -0.5,
     ...numeric('bold'),
   },
@@ -169,8 +172,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -180,12 +181,10 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: palette.accent,
   },
   liveLabel: {
     fontSize: 9,
     fontWeight: '800',
-    color: palette.accent,
     letterSpacing: 1.2,
   },
   empty: {

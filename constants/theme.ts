@@ -1,14 +1,10 @@
 import { Platform } from 'react-native';
 
-// === ACCENT COLOR — single source of truth ===
-// Change these three values to swap the app's accent everywhere.
-//   accentRgb     → solid base + accentSoft/accentEdge alpha variants
-//   accentInk     → text/icon color shown ON the solid accent (pick for contrast)
-//   accentGradient → 2-stop gradient (lighter, darker) used on GradientButton, RestRing
-const accentRgb = '163, 130, 215'; // iPhone 14 Pro Max Deep Purple, saturated for dark UI: #A382D7
-const accentInk = '#08080A';
-export const accentGradient = ['#BCA1E6', '#8467C0'] as const;
-// ==============================================
+// ============================================================
+// Static palette — non-accent surface/text colors only.
+// Accent tokens live in @/src/lib/settings.ts (`useAccent`) and
+// are runtime-swappable per the theme picker in Settings.
+// ============================================================
 
 export const palette = {
   bg: '#08080A',
@@ -19,11 +15,6 @@ export const palette = {
   text: '#FAFAFA',
   textDim: '#9A9AA8',
   textMuted: '#5C5C68',
-  accent: `rgb(${accentRgb})`,
-  accentInk,
-  accentSoft: `rgba(${accentRgb}, 0.12)`,
-  accentEdge: `rgba(${accentRgb}, 0.35)`,
-  accentRgb, // exposed for components that build their own alpha (e.g. Glow)
   danger: '#FF4D6D',
   warn: '#FFB627',
   overlay: 'rgba(0,0,0,0.55)',
@@ -48,22 +39,19 @@ export const spacing = {
 };
 
 // Legacy export kept so the @react-navigation theme prop in app/_layout.tsx still gets named colors.
+// Accent fields removed — consume `useAccent()` for any tint that should follow the active theme.
 export const Colors = {
   light: {
     text: palette.text,
     background: palette.bg,
-    tint: palette.accent,
     icon: palette.textDim,
     tabIconDefault: palette.textMuted,
-    tabIconSelected: palette.accent,
   },
   dark: {
     text: palette.text,
     background: palette.bg,
-    tint: palette.accent,
     icon: palette.textDim,
     tabIconDefault: palette.textMuted,
-    tabIconSelected: palette.accent,
   },
 };
 

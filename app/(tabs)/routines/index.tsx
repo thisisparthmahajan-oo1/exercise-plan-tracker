@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { numeric, palette, radius } from '@/constants/theme';
 import { useRoutineList } from '@/src/features/routines/useRoutineList';
+import { useAccent } from '@/src/lib/settings';
 import { formatRelativeDay } from '@/src/lib/formatDate';
 import { useRoutineRepo, useSessionRepo } from '@/src/repos/RepoContext';
 import type { RoutineSummary } from '@/src/repos/types';
@@ -19,6 +20,7 @@ export default function RoutinesScreen() {
   const routineRepo = useRoutineRepo();
   const { routines, loading, reload } = useRoutineList();
   const [startingId, setStartingId] = useState<string | null>(null);
+  const accent = useAccent();
 
   useFocusEffect(
     useCallback(() => {
@@ -68,7 +70,7 @@ export default function RoutinesScreen() {
           <Pressable
             hitSlop={10}
             style={({ pressed }) => [styles.actionLink, { opacity: pressed ? 0.5 : 1 }]}>
-            <ThemedText style={styles.actionLabelPrimary}>+ New routine</ThemedText>
+            <ThemedText style={[styles.actionLabelPrimary, { color: accent.accent }]}>+ New routine</ThemedText>
           </Pressable>
         </Link>
       </View>
@@ -99,17 +101,27 @@ export default function RoutinesScreen() {
         ListEmptyComponent={
           !loading ? (
             <View style={styles.empty}>
-              <View style={styles.emptyIcon}>
-                <IconSymbol name="list.bullet.clipboard.fill" size={28} color={palette.accent} />
+              <View
+                style={[
+                  styles.emptyIcon,
+                  { backgroundColor: accent.accentSoft, borderColor: accent.accentEdge },
+                ]}>
+                <IconSymbol name="list.bullet.clipboard.fill" size={28} color={accent.accent} />
               </View>
               <ThemedText style={styles.emptyTitle}>No routines yet</ThemedText>
               <ThemedText style={styles.emptyText}>
                 Build your first template — chest day, push day, whatever your split.
               </ThemedText>
               <Link href="/(tabs)/routines/new" asChild>
-                <Pressable style={({ pressed }) => [styles.emptyCta, { opacity: pressed ? 0.8 : 1 }]}>
-                  <IconSymbol name="plus" size={16} color={palette.accentInk} />
-                  <ThemedText style={styles.emptyCtaLabel}>Create routine</ThemedText>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.emptyCta,
+                    { backgroundColor: accent.accent, opacity: pressed ? 0.8 : 1 },
+                  ]}>
+                  <IconSymbol name="plus" size={16} color={accent.accentInk} />
+                  <ThemedText style={[styles.emptyCtaLabel, { color: accent.accentInk }]}>
+                    Create routine
+                  </ThemedText>
                 </Pressable>
               </Link>
             </View>
@@ -137,11 +149,12 @@ function RoutineCard({
   onStart: () => void;
   onMove: (dir: -1 | 1) => void | Promise<void>;
 }) {
+  const accent = useAccent();
   return (
     <Pressable
       onPress={onEdit}
       style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}>
-      <Surface style={styles.card}>
+      <Surface style={[styles.card, { borderColor: accent.accentEdge }]}>
         <View style={styles.reorderColumn}>
           <Pressable
             hitSlop={6}
@@ -206,6 +219,7 @@ function RoutineCard({
           style={({ pressed }) => [
             styles.playBtn,
             {
+              backgroundColor: accent.accent,
               opacity:
                 starting || routine.exerciseCount === 0
                   ? 0.35
@@ -214,7 +228,7 @@ function RoutineCard({
                     : 1,
             },
           ]}>
-          <IconSymbol name="play.fill" size={18} color={palette.accentInk} />
+          <IconSymbol name="play.fill" size={18} color={accent.accentInk} />
         </Pressable>
       </Surface>
     </Pressable>
@@ -246,7 +260,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     fontWeight: '700',
-    color: palette.accent,
     letterSpacing: 0.2,
   },
 
@@ -265,7 +278,6 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     paddingRight: 16,
     gap: 8,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   reorderColumn: {
@@ -317,7 +329,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: palette.accent,
     alignItems: 'center',
     justifyContent: 'center',
     paddingLeft: 2,
@@ -334,8 +345,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -358,7 +367,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: palette.accent,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: radius.pill,
@@ -367,6 +375,5 @@ const styles = StyleSheet.create({
   emptyCtaLabel: {
     fontSize: 14,
     fontWeight: '700',
-    color: palette.accentInk,
   },
 });

@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { palette } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 import { formatDuration, formatSessionDate } from '@/src/lib/formatDate';
 import { useSessionRepo } from '@/src/repos/RepoContext';
 import type { SessionWithSets } from '@/src/repos/types';
@@ -48,6 +49,7 @@ export default function SessionDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const repo = useSessionRepo();
+  const accent = useAccent();
 
   const [session, setSession] = useState<SessionWithSets | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,7 +94,7 @@ export default function SessionDetailScreen() {
     return (
       <Screen style={styles.center}>
         <Stack.Screen options={{ headerShown: false }} />
-        <ActivityIndicator color={palette.accent} />
+        <ActivityIndicator color={accent.accent} />
       </Screen>
     );
   }
@@ -144,7 +146,7 @@ export default function SessionDetailScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <ThemedText style={styles.date}>{formatSessionDate(session.startedAt)}</ThemedText>
 
-        <Surface style={styles.statsCard}>
+        <Surface style={[styles.statsCard, { borderColor: accent.accentEdge }]}>
           <StatBlock label="Sets" value={String(session.sets.length)} />
           <View style={styles.statDivider} />
           <StatBlock
@@ -165,7 +167,7 @@ export default function SessionDetailScreen() {
           groups.map((g) => {
             const isTimed = g.sets.some((s) => (s.holdSeconds ?? 0) > 0);
             return (
-              <Surface key={g.exerciseId} style={styles.exCard}>
+              <Surface key={g.exerciseId} style={[styles.exCard, { borderColor: accent.accentEdge }]}>
                 <View style={styles.exHeader}>
                   <View style={{ flex: 1 }}>
                     <ThemedText style={styles.exName}>{g.name}</ThemedText>
@@ -278,7 +280,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     gap: 14,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   statDivider: {
@@ -289,7 +290,6 @@ const styles = StyleSheet.create({
   exCard: {
     padding: 16,
     gap: 6,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   exHeader: {

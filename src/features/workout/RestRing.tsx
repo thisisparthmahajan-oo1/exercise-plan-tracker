@@ -3,7 +3,8 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { accentGradient, numeric, palette, radius } from '@/constants/theme';
+import { numeric, palette, radius } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 import { IconButton } from '@/src/ui';
 
 const SIZE = 140;
@@ -20,15 +21,20 @@ export function RestRing({
   duration: number;
   onCancel: () => void;
 }) {
+  const accent = useAccent();
   const pct = Math.min(1, Math.max(0, remaining / Math.max(duration, 1)));
   const offset = CIRC * (1 - pct);
 
   return (
-    <View style={styles.wrap}>
+    <View
+      style={[
+        styles.wrap,
+        { backgroundColor: accent.accentSoft, borderBottomColor: accent.accentEdge },
+      ]}>
       <View style={styles.header}>
         <View style={styles.labelRow}>
-          <View style={styles.dot} />
-          <ThemedText style={styles.label}>RESTING</ThemedText>
+          <View style={[styles.dot, { backgroundColor: accent.accent }]} />
+          <ThemedText style={[styles.label, { color: accent.accent }]}>RESTING</ThemedText>
         </View>
         <IconButton variant="surface" size={32} onPress={onCancel}>
           <IconSymbol name="xmark" size={14} color={palette.textDim} />
@@ -39,8 +45,8 @@ export function RestRing({
         <Svg width={SIZE} height={SIZE}>
           <Defs>
             <LinearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0" stopColor={accentGradient[0]} />
-              <Stop offset="1" stopColor={accentGradient[1]} />
+              <Stop offset="0" stopColor={accent.accentGradient[0]} />
+              <Stop offset="1" stopColor={accent.accentGradient[1]} />
             </LinearGradient>
           </Defs>
           <Circle
@@ -77,9 +83,7 @@ export function RestRing({
 
 const styles = StyleSheet.create({
   wrap: {
-    backgroundColor: palette.accentSoft,
     borderBottomWidth: 1,
-    borderBottomColor: palette.accentEdge,
     paddingTop: 14,
     paddingBottom: 22,
     alignItems: 'center',
@@ -101,11 +105,9 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: palette.accent,
   },
   label: {
     fontSize: 11,
-    color: palette.accent,
     letterSpacing: 1.6,
     fontWeight: '700',
   },

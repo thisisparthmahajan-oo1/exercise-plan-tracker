@@ -6,9 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { accentGradient, numeric, palette, radius } from '@/constants/theme';
+import { numeric, palette, radius } from '@/constants/theme';
 import { useSessionList } from '@/src/features/history/useSessionList';
 import { formatSessionDate } from '@/src/lib/formatDate';
+import { useAccent } from '@/src/lib/settings';
 import { useElapsedSince } from '@/src/lib/useElapsedSince';
 import { useRoutineRepo, useSessionRepo } from '@/src/repos/RepoContext';
 import type { RoutineWithExercises, WeeklyStats } from '@/src/repos/types';
@@ -45,6 +46,7 @@ export default function HomeScreen() {
   const sessionRepo = useSessionRepo();
   const routineRepo = useRoutineRepo();
   const { sessions, reload } = useSessionList();
+  const accent = useAccent();
   const [starting, setStarting] = useState(false);
   const [nextRoutine, setNextRoutine] = useState<RoutineWithExercises | null>(null);
   const [stats, setStats] = useState<WeeklyStats | null>(null);
@@ -174,8 +176,11 @@ export default function HomeScreen() {
                   <View
                     style={[
                       styles.dot,
-                      active && styles.dotActive,
-                      isToday && styles.dotToday,
+                      active && {
+                        backgroundColor: accent.accent,
+                        borderColor: accent.accent,
+                      },
+                      isToday && { borderColor: accent.accent, borderWidth: 2 },
                     ]}
                   />
                   <ThemedText
@@ -206,7 +211,7 @@ export default function HomeScreen() {
                       params: { id: s.id },
                     })
                   }>
-                  <Surface style={styles.recentCard}>
+                  <Surface style={[styles.recentCard, { borderColor: accent.accentEdge }]}>
                     <View style={{ flex: 1 }}>
                       <ThemedText style={styles.recentTitle}>
                         {s.routineName ?? 'Quick Workout'}
@@ -218,7 +223,7 @@ export default function HomeScreen() {
                     </View>
                     {s.totalVolume > 0 ? (
                       <View style={styles.recentVolume}>
-                        <ThemedText style={styles.recentVolumeValue}>
+                        <ThemedText style={[styles.recentVolumeValue, { color: accent.accent }]}>
                           {formatVolume(s.totalVolume)}
                         </ThemedText>
                         <ThemedText style={styles.recentVolumeLabel}>VOL</ThemedText>
@@ -246,11 +251,12 @@ function StatCell({
   sublabel?: string;
   accent?: boolean;
 }) {
+  const accentTokens = useAccent();
   return (
     <View style={styles.statCell}>
       <ThemedText style={styles.statLabel}>{label}</ThemedText>
       <ThemedText
-        style={[styles.statValue, accent && { color: palette.accent }]}>
+        style={[styles.statValue, accent && { color: accentTokens.accent }]}>
         {value}
       </ThemedText>
       {sublabel ? <ThemedText style={styles.statSub}>{sublabel}</ThemedText> : null}
@@ -269,6 +275,7 @@ function HeroCard({
   onStart: () => void;
   onQuickStart: () => void;
 }) {
+  const accent = useAccent();
   const exerciseCount = routine?.exercises.length ?? 0;
   const totalSets =
     routine?.exercises.reduce(
@@ -280,11 +287,11 @@ function HeroCard({
 
   return (
     <View style={styles.heroOuter}>
-      <View style={styles.heroAccentEdge} />
+      <View style={[styles.heroAccentEdge, { borderColor: accent.accentEdge }]} />
       <Surface variant="high" style={styles.heroCard}>
         <View style={styles.heroLabelRow}>
-          <View style={styles.dotIndicator} />
-          <ThemedText style={styles.heroLabel}>
+          <View style={[styles.dotIndicator, { backgroundColor: accent.accent }]} />
+          <ThemedText style={[styles.heroLabel, { color: accent.accent }]}>
             {routine ? 'NEXT UP' : 'GET MOVING'}
           </ThemedText>
         </View>
@@ -307,7 +314,11 @@ function HeroCard({
               </View>
             ))}
             {exerciseCount > previewNames.length ? (
-              <View style={[styles.heroPill, styles.heroPillMore]}>
+              <View
+                style={[
+                  styles.heroPill,
+                  { backgroundColor: accent.accentSoft, borderColor: accent.accentEdge },
+                ]}>
                 <ThemedText style={styles.heroPillText}>
                   +{exerciseCount - previewNames.length}
                 </ThemedText>
@@ -324,12 +335,12 @@ function HeroCard({
             { opacity: disabled ? 0.4 : pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
           ]}>
           <LinearGradient
-            colors={accentGradient as unknown as [string, string]}
+            colors={accent.accentGradient as unknown as [string, string]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroBtn}>
-            <IconSymbol name="play.fill" size={20} color={palette.accentInk} />
-            <ThemedText style={styles.heroBtnLabel}>
+            <IconSymbol name="play.fill" size={20} color={accent.accentInk} />
+            <ThemedText style={[styles.heroBtnLabel, { color: accent.accentInk }]}>
               {routine ? 'Start workout' : 'Start quick workout'}
             </ThemedText>
           </LinearGradient>
@@ -362,18 +373,24 @@ function ResumeCard({
   startedAt: Date;
   onPress: () => void;
 }) {
+  const accent = useAccent();
   const elapsed = useElapsedSince(startedAt);
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.resumeOuter,
-        { opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+        {
+          backgroundColor: accent.accentSoft,
+          borderColor: accent.accentEdge,
+          opacity: pressed ? 0.85 : 1,
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+        },
       ]}>
       <View style={styles.resumeHeaderRow}>
         <View style={styles.resumeLabelRow}>
-          <View style={styles.livePulse} />
-          <ThemedText style={styles.resumeLabel}>LIVE</ThemedText>
+          <View style={[styles.livePulse, { backgroundColor: accent.accent }]} />
+          <ThemedText style={[styles.resumeLabel, { color: accent.accent }]}>LIVE</ThemedText>
         </View>
         <ThemedText style={styles.resumeRoutine} numberOfLines={1}>
           {label}
@@ -382,13 +399,15 @@ function ResumeCard({
 
       <View style={styles.resumeTimerWrap}>
         <ThemedText style={styles.resumeTimer}>{elapsed}</ThemedText>
-        <ThemedText style={styles.resumeTimerLabel}>ELAPSED</ThemedText>
+        <ThemedText style={[styles.resumeTimerLabel, { color: accent.accent }]}>ELAPSED</ThemedText>
       </View>
 
       <View style={styles.resumeBtnRow}>
-        <View style={styles.resumeBtn}>
-          <IconSymbol name="play.fill" size={16} color={palette.accentInk} />
-          <ThemedText style={styles.resumeBtnLabel}>Resume workout</ThemedText>
+        <View style={[styles.resumeBtn, { backgroundColor: accent.accent }]}>
+          <IconSymbol name="play.fill" size={16} color={accent.accentInk} />
+          <ThemedText style={[styles.resumeBtnLabel, { color: accent.accentInk }]}>
+            Resume workout
+          </ThemedText>
         </View>
       </View>
     </Pressable>
@@ -478,7 +497,6 @@ const styles = StyleSheet.create({
     bottom: -2,
     borderRadius: radius.xl + 2,
     borderWidth: 1,
-    borderColor: palette.accentEdge,
   },
   heroCard: {
     padding: 20,
@@ -495,11 +513,9 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: palette.accent,
   },
   heroLabel: {
     fontSize: 11,
-    color: palette.accent,
     fontWeight: '700',
     letterSpacing: 1.6,
   },
@@ -531,10 +547,6 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     maxWidth: '100%',
   },
-  heroPillMore: {
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accentEdge,
-  },
   heroPillText: {
     fontSize: 12,
     color: palette.text,
@@ -554,7 +566,6 @@ const styles = StyleSheet.create({
   },
   heroBtnLabel: {
     fontSize: 17,
-    color: palette.accentInk,
     fontWeight: '800',
     letterSpacing: 0.2,
   },
@@ -570,10 +581,8 @@ const styles = StyleSheet.create({
 
   // Resume in-progress card
   resumeOuter: {
-    backgroundColor: palette.accentSoft,
     borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: palette.accentEdge,
     padding: 20,
     gap: 12,
   },
@@ -592,11 +601,9 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: palette.accent,
   },
   resumeLabel: {
     fontSize: 11,
-    color: palette.accent,
     fontWeight: '700',
     letterSpacing: 1.6,
   },
@@ -621,7 +628,6 @@ const styles = StyleSheet.create({
   },
   resumeTimerLabel: {
     fontSize: 10,
-    color: palette.accent,
     fontWeight: '700',
     letterSpacing: 1.6,
   },
@@ -634,14 +640,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: palette.accent,
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: radius.pill,
   },
   resumeBtnLabel: {
     fontSize: 14,
-    color: palette.accentInk,
     fontWeight: '700',
   },
 
@@ -679,14 +683,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.border,
   },
-  dotActive: {
-    backgroundColor: palette.accent,
-    borderColor: palette.accent,
-  },
-  dotToday: {
-    borderColor: palette.accent,
-    borderWidth: 2,
-  },
   dotLabel: {
     fontSize: 11,
     color: palette.textMuted,
@@ -703,7 +699,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     gap: 12,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   recentTitle: {
@@ -722,7 +717,6 @@ const styles = StyleSheet.create({
   recentVolumeValue: {
     fontSize: 18,
     lineHeight: 22,
-    color: palette.accent,
     letterSpacing: -0.4,
     ...numeric('bold'),
   },

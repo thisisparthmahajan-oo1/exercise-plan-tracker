@@ -12,6 +12,7 @@ import {
   type ImportSummary,
   importStrongWorkouts,
 } from '@/src/features/import/strongImporter';
+import { useAccent } from '@/src/lib/settings';
 import { Glow, GradientButton, Screen, SectionLabel, Surface } from '@/src/ui';
 
 type PickedFile = { name: string; uri: string };
@@ -22,6 +23,7 @@ export default function ImportScreen() {
   const [file, setFile] = useState<PickedFile | null>(null);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<ImportSummary | null>(null);
+  const accent = useAccent();
 
   const pickFile = async () => {
     try {
@@ -102,7 +104,7 @@ export default function ImportScreen() {
           </ThemedText>
         </View>
 
-        <Surface style={styles.detailCard}>
+        <Surface style={[styles.detailCard, { borderColor: accent.accentEdge }]}>
           <SectionLabel>Expected columns</SectionLabel>
           <ThemedText style={styles.mono}>
             Date, Workout Name, Duration, Exercise Name, Set Order, Weight, Reps,
@@ -115,7 +117,7 @@ export default function ImportScreen() {
         </Surface>
 
         {file ? (
-          <Surface style={styles.fileCard}>
+          <Surface style={[styles.fileCard, { borderColor: accent.accentEdge }]}>
             <View style={{ flex: 1 }}>
               <SectionLabel>Selected file</SectionLabel>
               <ThemedText style={styles.fileName} numberOfLines={1}>
@@ -137,10 +139,10 @@ export default function ImportScreen() {
             onPress={pickFile}
             style={({ pressed }) => [
               styles.pickCard,
-              { opacity: pressed ? 0.7 : 1 },
+              { borderColor: accent.accentEdge, opacity: pressed ? 0.7 : 1 },
             ]}>
-            <IconSymbol name="plus" size={22} color={palette.accent} />
-            <ThemedText style={styles.pickLabel}>Choose a CSV file</ThemedText>
+            <IconSymbol name="plus" size={22} color={accent.accent} />
+            <ThemedText style={[styles.pickLabel, { color: accent.accent }]}>Choose a CSV file</ThemedText>
             <ThemedText style={styles.pickSub}>
               From Files, iCloud Drive, or anywhere
             </ThemedText>
@@ -148,7 +150,7 @@ export default function ImportScreen() {
         )}
 
         {result && result.unknownExercises.length === 0 && result.sessionsCreated + result.sessionsSkipped > 0 ? (
-          <Surface style={styles.resultCard}>
+          <Surface style={[styles.resultCard, { backgroundColor: accent.accentSoft, borderColor: accent.accentEdge }]}>
             <SectionLabel>Done</SectionLabel>
             <View style={styles.resultRow}>
               <ThemedText style={styles.resultLabel}>Rows parsed</ThemedText>
@@ -156,7 +158,7 @@ export default function ImportScreen() {
             </View>
             <View style={styles.resultRow}>
               <ThemedText style={styles.resultLabel}>Sessions created</ThemedText>
-              <ThemedText style={[styles.resultValue, { color: palette.accent }]}>
+              <ThemedText style={[styles.resultValue, { color: accent.accent }]}>
                 {result.sessionsCreated}
               </ThemedText>
             </View>
@@ -166,7 +168,7 @@ export default function ImportScreen() {
             </View>
             <View style={styles.resultRow}>
               <ThemedText style={styles.resultLabel}>Sets created</ThemedText>
-              <ThemedText style={[styles.resultValue, { color: palette.accent }]}>
+              <ThemedText style={[styles.resultValue, { color: accent.accent }]}>
                 {result.setsCreated}
               </ThemedText>
             </View>
@@ -179,14 +181,18 @@ export default function ImportScreen() {
             size="lg"
             onPress={runImport}
             disabled={running}
-            icon={<IconSymbol name="play.fill" size={18} color={palette.accentInk} />}
+            icon={<IconSymbol name="play.fill" size={18} color={accent.accentInk} />}
           />
         ) : null}
 
         {importDone ? (
-          <View style={styles.doneBanner}>
-            <IconSymbol name="checkmark" size={18} color={palette.accent} />
-            <ThemedText style={styles.doneLabel}>
+          <View
+            style={[
+              styles.doneBanner,
+              { backgroundColor: accent.accentSoft, borderColor: accent.accentEdge },
+            ]}>
+            <IconSymbol name="checkmark" size={18} color={accent.accent} />
+            <ThemedText style={[styles.doneLabel, { color: accent.accent }]}>
               Import done — pick another file to import again
             </ThemedText>
           </View>
@@ -199,7 +205,7 @@ export default function ImportScreen() {
               styles.secondary,
               { opacity: pressed ? 0.5 : 1 },
             ]}>
-            <ThemedText style={styles.secondaryLabel}>View in History →</ThemedText>
+            <ThemedText style={[styles.secondaryLabel, { color: accent.accent }]}>View in History →</ThemedText>
           </Pressable>
         ) : null}
       </ScrollView>
@@ -251,7 +257,6 @@ const styles = StyleSheet.create({
   detailCard: {
     padding: 16,
     gap: 6,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   mono: {
@@ -269,8 +274,6 @@ const styles = StyleSheet.create({
     paddingVertical: 28,
     paddingHorizontal: 20,
     borderRadius: 16,
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
     alignItems: 'center',
     gap: 6,
@@ -278,7 +281,6 @@ const styles = StyleSheet.create({
   pickLabel: {
     fontSize: 16,
     fontWeight: '700',
-    color: palette.accent,
     marginTop: 4,
   },
   pickSub: {
@@ -290,7 +292,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     gap: 12,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   fileName: {
@@ -302,7 +303,6 @@ const styles = StyleSheet.create({
   resultCard: {
     padding: 16,
     gap: 10,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   resultRow: {
@@ -326,7 +326,6 @@ const styles = StyleSheet.create({
   },
   secondaryLabel: {
     fontSize: 14,
-    color: palette.accent,
     fontWeight: '600',
   },
   doneBanner: {
@@ -334,8 +333,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
     borderRadius: 12,
     paddingVertical: 14,
@@ -343,7 +340,6 @@ const styles = StyleSheet.create({
   },
   doneLabel: {
     fontSize: 13,
-    color: palette.accent,
     fontWeight: '600',
   },
 });

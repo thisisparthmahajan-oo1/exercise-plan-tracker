@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { palette, radius } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 import { useExerciseRepo } from '@/src/repos/RepoContext';
 import { newExerciseSchema, type NewExerciseInput } from '@/src/repos/types';
 import { Field, Glow, GradientButton, Screen, StyledTextInput } from '@/src/ui';
@@ -116,6 +117,7 @@ function Chips({
   value: string | undefined;
   onChange: (v: string | undefined) => void;
 }) {
+  const accent = useAccent();
   return (
     <View style={styles.chips}>
       {items.map((g) => {
@@ -124,11 +126,14 @@ function Chips({
           <Pressable
             key={g}
             onPress={() => onChange(selected ? undefined : g)}
-            style={[styles.chip, selected && styles.chipSelected]}>
+            style={[
+              styles.chip,
+              selected && { backgroundColor: accent.accent, borderColor: accent.accent },
+            ]}>
             <ThemedText
               style={[
                 styles.chipLabel,
-                selected && styles.chipLabelSelected,
+                selected && { color: accent.accentInk, fontWeight: '700' },
               ]}>
               {g}
             </ThemedText>
@@ -178,17 +183,9 @@ const styles = StyleSheet.create({
     borderColor: palette.border,
     backgroundColor: palette.surface,
   },
-  chipSelected: {
-    backgroundColor: palette.accent,
-    borderColor: palette.accent,
-  },
   chipLabel: {
     fontSize: 13,
     fontWeight: '600',
     color: palette.text,
-  },
-  chipLabelSelected: {
-    color: palette.accentInk,
-    fontWeight: '700',
   },
 });

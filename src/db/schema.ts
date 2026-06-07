@@ -69,6 +69,13 @@ export const appSettings = sqliteTable('app_settings', {
   restTimerDisabled: integer('rest_timer_disabled', { mode: 'boolean' })
     .notNull()
     .default(false),
+  // Active accent theme id (resolved against THEMES in constants/themes.ts).
+  themeId: text('theme_id').notNull().default('purple'),
+  // When true, the active-workout SetRow shows KG on the left and REPS on
+  // the right — inverted from the default REPS-first layout.
+  repsRightLayout: integer('reps_right_layout', { mode: 'boolean' })
+    .notNull()
+    .default(false),
 });
 
 export const setLogs = sqliteTable('set_logs', {

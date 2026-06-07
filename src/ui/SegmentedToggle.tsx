@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { palette, radius } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 export function SegmentedToggle<T extends string>({
   items,
@@ -12,6 +13,7 @@ export function SegmentedToggle<T extends string>({
   value: T;
   onChange: (v: T) => void;
 }) {
+  const accent = useAccent();
   return (
     <View style={styles.container}>
       {items.map((it) => {
@@ -22,12 +24,12 @@ export function SegmentedToggle<T extends string>({
             onPress={() => onChange(it.key)}
             style={[
               styles.btn,
-              selected && styles.btnSelected,
+              selected && { backgroundColor: accent.accent },
             ]}>
             <ThemedText
               style={[
                 styles.label,
-                { color: selected ? palette.accentInk : palette.textDim },
+                { color: selected ? accent.accentInk : palette.textDim },
                 selected && styles.labelSelected,
               ]}>
               {it.label}
@@ -54,9 +56,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  btnSelected: {
-    backgroundColor: palette.accent,
   },
   label: {
     fontSize: 13,

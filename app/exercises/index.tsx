@@ -7,6 +7,7 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { palette, radius } from '@/constants/theme';
 import { useExerciseList } from '@/src/features/exercises/useExerciseList';
+import { useAccent } from '@/src/lib/settings';
 import type { Exercise } from '@/src/repos/types';
 import { Glow, Screen, SectionLabel, Surface } from '@/src/ui';
 
@@ -34,6 +35,7 @@ export default function ExercisesScreen() {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const { exercises, loading } = useExerciseList(query);
+  const accent = useAccent();
 
   const items = useMemo<ListItem[]>(() => {
     const sections = groupByMuscle(exercises);
@@ -66,7 +68,7 @@ export default function ExercisesScreen() {
               styles.headerEnd,
               { opacity: pressed ? 0.5 : 1 },
             ]}>
-            <ThemedText style={styles.headerActionLabel}>+ New</ThemedText>
+            <ThemedText style={[styles.headerActionLabel, { color: accent.accent }]}>+ New</ThemedText>
           </Pressable>
         </Link>
       </View>
@@ -103,8 +105,14 @@ export default function ExercisesScreen() {
                 ) : null}
               </View>
               {!ex.isSeeded ? (
-                <View style={styles.customPill}>
-                  <ThemedText style={styles.customLabel}>CUSTOM</ThemedText>
+                <View
+                  style={[
+                    styles.customPill,
+                    { backgroundColor: accent.accentSoft, borderColor: accent.accentEdge },
+                  ]}>
+                  <ThemedText style={[styles.customLabel, { color: accent.accent }]}>
+                    CUSTOM
+                  </ThemedText>
                 </View>
               ) : null}
             </Surface>
@@ -145,7 +153,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   headerActionLabel: {
-    color: palette.accent,
     fontWeight: '700',
     fontSize: 14,
     lineHeight: 18,
@@ -195,8 +202,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   customPill: {
-    backgroundColor: palette.accentSoft,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -205,7 +210,6 @@ const styles = StyleSheet.create({
   customLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: palette.accent,
     letterSpacing: 1.2,
   },
   empty: {

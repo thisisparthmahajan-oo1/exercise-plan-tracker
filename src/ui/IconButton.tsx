@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 
 import { palette, radius } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 export function IconButton({
   children,
@@ -23,9 +24,10 @@ export function IconButton({
   variant?: 'ghost' | 'surface' | 'accent';
   style?: StyleProp<ViewStyle>;
 }) {
+  const accent = useAccent();
   const bg =
     variant === 'accent'
-      ? palette.accent
+      ? accent.accent
       : variant === 'surface'
         ? palette.surface
         : 'transparent';

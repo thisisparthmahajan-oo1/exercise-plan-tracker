@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { accentGradient, palette, radius } from '@/constants/theme';
+import { radius } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 export function GradientButton({
   label,
@@ -26,6 +27,7 @@ export function GradientButton({
   size?: 'md' | 'lg';
   style?: StyleProp<ViewStyle>;
 }) {
+  const accent = useAccent();
   return (
     <Pressable
       onPress={onPress}
@@ -36,13 +38,18 @@ export function GradientButton({
         style,
       ]}>
       <LinearGradient
-        colors={accentGradient as unknown as [string, string]}
+        colors={accent.accentGradient as unknown as [string, string]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.gradient, size === 'lg' ? styles.lg : styles.md]}>
         <View style={styles.inner}>
           {icon}
-          <ThemedText style={[styles.label, size === 'lg' ? styles.labelLg : styles.labelMd]}>
+          <ThemedText
+            style={[
+              styles.label,
+              { color: accent.accentInk },
+              size === 'lg' ? styles.labelLg : styles.labelMd,
+            ]}>
             {label}
           </ThemedText>
         </View>
@@ -74,7 +81,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   label: {
-    color: palette.accentInk,
     fontWeight: '800',
     letterSpacing: 0.3,
   },

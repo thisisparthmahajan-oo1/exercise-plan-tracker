@@ -9,6 +9,7 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { palette, radius } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 export function PrimaryButton({
   label,
@@ -25,6 +26,7 @@ export function PrimaryButton({
   variant?: 'solid' | 'ghost' | 'danger';
   style?: StyleProp<ViewStyle>;
 }) {
+  const accent = useAccent();
   const isGhost = variant === 'ghost';
   const isDanger = variant === 'danger';
 
@@ -32,8 +34,8 @@ export function PrimaryButton({
     ? 'transparent'
     : isDanger
       ? 'rgba(255, 77, 109, 0.14)'
-      : palette.accent;
-  const fg = isGhost ? palette.text : isDanger ? palette.danger : palette.accentInk;
+      : accent.accent;
+  const fg = isGhost ? palette.text : isDanger ? palette.danger : accent.accentInk;
   const borderColor = isGhost ? palette.border : isDanger ? 'rgba(255, 77, 109, 0.3)' : 'transparent';
 
   return (

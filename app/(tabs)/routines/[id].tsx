@@ -11,6 +11,7 @@ import {
   defaultsFromRoutine,
   type RoutineFormDefaults,
 } from '@/src/features/routines/RoutineForm';
+import { useAccent } from '@/src/lib/settings';
 import { useRoutineRepo, useSessionRepo } from '@/src/repos/RepoContext';
 import type { NewRoutineInput } from '@/src/repos/types';
 import { Glow, GradientButton, Screen } from '@/src/ui';
@@ -21,6 +22,7 @@ export default function EditRoutineScreen() {
   const insets = useSafeAreaInsets();
   const repo = useRoutineRepo();
   const sessionRepo = useSessionRepo();
+  const accent = useAccent();
 
   const [defaults, setDefaults] = useState<RoutineFormDefaults | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,7 +119,7 @@ export default function EditRoutineScreen() {
 
       {loading || !defaults ? (
         <View style={styles.center}>
-          <ActivityIndicator color={palette.accent} />
+          <ActivityIndicator color={accent.accent} />
         </View>
       ) : (
         <View style={{ flex: 1 }}>
@@ -127,7 +129,7 @@ export default function EditRoutineScreen() {
               size="lg"
               onPress={startWorkout}
               disabled={starting || defaults.exercises.length === 0}
-              icon={<IconSymbol name="play.fill" size={18} color={palette.accentInk} />}
+              icon={<IconSymbol name="play.fill" size={18} color={accent.accentInk} />}
             />
           </View>
           <RoutineForm defaults={defaults} submitting={submitting} onSubmit={onSubmit} />

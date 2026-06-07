@@ -2,7 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { accentGradient, palette } from '@/constants/theme';
+import { palette } from '@/constants/theme';
+import { useAccent } from '@/src/lib/settings';
 
 export function BarChart({
   values,
@@ -13,6 +14,7 @@ export function BarChart({
   labels: string[];
   height?: number;
 }) {
+  const accent = useAccent();
   const max = Math.max(...values, 1);
   return (
     <View>
@@ -25,7 +27,7 @@ export function BarChart({
               <View style={[styles.barBg, { height }]}>
                 {isLast ? (
                   <LinearGradient
-                    colors={accentGradient as unknown as [string, string]}
+                    colors={accent.accentGradient as unknown as [string, string]}
                     start={{ x: 0, y: 1 }}
                     end={{ x: 0, y: 0 }}
                     style={[
@@ -53,7 +55,10 @@ export function BarChart({
         {labels.map((l, i) => (
           <ThemedText
             key={i}
-            style={[styles.label, i === labels.length - 1 && styles.labelActive]}
+            style={[
+              styles.label,
+              i === labels.length - 1 && { color: accent.accent },
+            ]}
             numberOfLines={1}>
             {l}
           </ThemedText>
@@ -96,8 +101,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
     fontWeight: '600',
-  },
-  labelActive: {
-    color: palette.accent,
   },
 });

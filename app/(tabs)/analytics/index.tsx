@@ -15,6 +15,7 @@ import { numeric, palette } from '@/constants/theme';
 import { BarChart } from '@/src/features/analytics/BarChart';
 import { deltaLabel, formatBucketLabel } from '@/src/features/analytics/formatBucket';
 import { ExercisePickerModal } from '@/src/features/exercises/ExercisePickerModal';
+import { useAccent } from '@/src/lib/settings';
 import { useAnalyticsRepo } from '@/src/repos/RepoContext';
 import type {
   AnalyticsMetric,
@@ -38,6 +39,7 @@ const RANGES: { key: AnalyticsRange; label: string }[] = [
 export default function AnalyticsScreen() {
   const insets = useSafeAreaInsets();
   const analytics = useAnalyticsRepo();
+  const accent = useAccent();
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [metric, setMetric] = useState<AnalyticsMetric>('volume');
@@ -89,7 +91,7 @@ export default function AnalyticsScreen() {
         <Pressable
           onPress={() => setPickerOpen(true)}
           style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
-          <Surface style={styles.pickerCard}>
+          <Surface style={[styles.pickerCard, { borderColor: accent.accentEdge }]}>
             <View style={{ flex: 1 }}>
               <SectionLabel>Exercise</SectionLabel>
               <ThemedText style={styles.pickerValue}>
@@ -114,7 +116,7 @@ export default function AnalyticsScreen() {
           </View>
         ) : loading ? (
           <View style={styles.loading}>
-            <ActivityIndicator color={palette.accent} />
+            <ActivityIndicator color={accent.accent} />
           </View>
         ) : points.length === 0 ? (
           <View style={styles.emptyWrap}>
@@ -125,7 +127,7 @@ export default function AnalyticsScreen() {
           </View>
         ) : (
           <>
-            <Surface style={styles.statsCard}>
+            <Surface style={[styles.statsCard, { borderColor: accent.accentEdge }]}>
               <View style={{ flex: 1 }}>
                 <SectionLabel>
                   Latest {metric === 'volume' ? 'volume' : 'max weight'}
@@ -140,20 +142,20 @@ export default function AnalyticsScreen() {
                     styles.deltaPill,
                     {
                       backgroundColor: positive
-                        ? palette.accentSoft
+                        ? accent.accentSoft
                         : 'rgba(255, 77, 109, 0.12)',
-                      borderColor: positive ? palette.accentEdge : 'rgba(255, 77, 109, 0.32)',
+                      borderColor: positive ? accent.accentEdge : 'rgba(255, 77, 109, 0.32)',
                     },
                   ]}>
                   <IconSymbol
                     name={positive ? 'chart.line.uptrend.xyaxis' : 'chevron.right'}
                     size={12}
-                    color={positive ? palette.accent : palette.danger}
+                    color={positive ? accent.accent : palette.danger}
                   />
                   <ThemedText
                     style={[
                       styles.deltaPct,
-                      { color: positive ? palette.accent : palette.danger },
+                      { color: positive ? accent.accent : palette.danger },
                     ]}>
                     {positive ? '+' : ''}
                     {deltaPct.toFixed(1)}%
@@ -163,7 +165,7 @@ export default function AnalyticsScreen() {
               </View>
             </Surface>
 
-            <Surface style={styles.chartCard}>
+            <Surface style={[styles.chartCard, { borderColor: accent.accentEdge }]}>
               <BarChart values={values} labels={labels} />
             </Surface>
           </>
@@ -190,7 +192,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   pickerValue: {
@@ -207,7 +208,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 18,
     gap: 12,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   latestValue: {
@@ -244,7 +244,6 @@ const styles = StyleSheet.create({
   chartCard: {
     paddingVertical: 18,
     paddingHorizontal: 14,
-    borderColor: palette.accentEdge,
     borderWidth: 1,
   },
   emptyWrap: {
