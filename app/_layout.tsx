@@ -25,6 +25,7 @@ import { useDbMigrations } from '@/src/db/migrate';
 import { seedExercisesIfNeeded } from '@/src/db/seed';
 import { RepoProvider } from '@/src/repos/RepoContext';
 import { SettingsProvider, useAccent } from '@/src/lib/settings';
+import { SyncProvider } from '@/src/sync/SyncProvider';
 import { defaultStackOptions } from '@/src/ui/stackOptions';
 
 export const unstable_settings = {
@@ -72,9 +73,11 @@ export default function RootLayout() {
 
   return (
     <RepoProvider>
-      <SettingsProvider>
-        <ThemedRoot />
-      </SettingsProvider>
+      <SyncProvider>
+        <SettingsProvider>
+          <ThemedRoot />
+        </SettingsProvider>
+      </SyncProvider>
     </RepoProvider>
   );
 }

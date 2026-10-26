@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { palette, radius } from '@/constants/theme';
 import { THEMES, THEME_ORDER, type ThemeId } from '@/constants/themes';
+import { AccountSyncSection } from '@/src/features/sync/AccountSyncSection';
 import { useAccent, useSettings } from '@/src/lib/settings';
 import { Glow, Screen, SectionLabel, Surface } from '@/src/ui';
 
@@ -40,6 +41,8 @@ export default function SettingsScreen() {
 
       <ScrollView
         contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <SectionLabel>Theme</SectionLabel>
@@ -101,6 +104,8 @@ export default function SettingsScreen() {
             />
           </Surface>
         </View>
+
+        <AccountSyncSection />
       </ScrollView>
     </Screen>
   );

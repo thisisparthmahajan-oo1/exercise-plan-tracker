@@ -1,0 +1,13 @@
+{
+  // Runs the app's real sync code (src/sync/*) under Node: the expo-only
+  // modules it imports are swapped for in-process fakes via path mapping.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/src/db/client": ["./fake-db-client.ts"],
+      "expo-secure-store": ["./fake-secure-store.ts"],
+      "@/*": ["../../../*"]
+    }
+  }
+}

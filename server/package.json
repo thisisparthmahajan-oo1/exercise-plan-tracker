@@ -10,8 +10,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server/src/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test test/*.test.ts",
-    "create-user": "tsx --env-file=.env scripts/create-user.ts"
+    "test": "tsx --test test/*.test.ts && npm run test:client",
+    "create-user": "tsx --env-file=.env scripts/create-user.ts",
+    "test:client": "tsx --tsconfig test/client/tsconfig.json --test test/client/*.test.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -24,7 +25,9 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.19.43",
+    "@types/sql.js": "^1.4.11",
     "mongodb-memory-server": "^11.3.0",
+    "sql.js": "^1.15.2",
     "tsx": "^4.23.15",
     "typescript": "~5.9"
   }
