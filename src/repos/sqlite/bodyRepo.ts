@@ -4,7 +4,6 @@ import { db } from '@/src/db/client';
 import { bodyMetricLogs } from '@/src/db/schema';
 import { isoToLocalDate } from '@/src/features/body/date';
 import { isBodyMetricKey } from '@/src/features/body/metrics';
-import { uuid } from '@/src/lib/uuid';
 import type {
   BodyEntryInput,
   BodyLatest,
@@ -13,6 +12,13 @@ import type {
   TimeSeriesPoint,
 } from '@/src/repos/types';
 import { bodyEntryInputSchema } from '@/src/repos/types';
+
+// Natural-key id: one row per (metric, day) on every device, so two offline
+// devices logging the same day converge on one row under sync instead of
+// colliding on the (metric, date) unique index.
+function bodyMetricLogId(metric: BodyMetricKey, date: string): string {
+  return `${metric}:${date}`;
+}
 
 export const sqliteBodyRepo: BodyRepo = {
   async getDay(date: string): Promise<Partial<Record<BodyMetricKey, number>>> {
@@ -43,7 +49,7 @@ export const sqliteBodyRepo: BodyRepo = {
         }
         await tx
           .insert(bodyMetricLogs)
-          .values({ id: uuid(), metric, value, date })
+          .values({ id: bodyMetricLogId(metric, date), metric, value, date })
           .onConflictDoUpdate({
             target: [bodyMetricLogs.metric, bodyMetricLogs.date],
             set: { value },

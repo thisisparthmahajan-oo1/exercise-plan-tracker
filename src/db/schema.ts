@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 const nowMs = sql`(unixepoch() * 1000)`;
 
@@ -114,6 +114,39 @@ export const bodyMetricLogs = sqliteTable(
     metricDateUnique: uniqueIndex('body_metric_date_unq').on(t.metric, t.date),
   }),
 );
+
+// ── Sync bookkeeping ────────────────────────────────────────────────────────
+// Not domain data — these back the offline-first sync layer in src/sync/.
+// Triggers on every synced table (see the sync_triggers migration) upsert a
+// row here on insert/update/delete. One pending entry per row: N local edits
+// collapse to a single push of the row's current state (or a tombstone if the
+// row is gone by push time).
+export const syncOutbox = sqliteTable(
+  '_sync_outbox',
+  {
+    tableName: text('table_name').notNull(),
+    rowId: text('row_id').notNull(),
+    // ms since epoch of the latest local change; doubles as the last-write-wins
+    // timestamp sent to the server.
+    changedAt: integer('changed_at').notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.tableName, t.rowId] }),
+  }),
+);
+
+// Single-row sync state. `applying` = 1 while pulled server changes are being
+// written locally — the triggers check it so pulled rows aren't echoed back
+// into the outbox.
+export const syncState = sqliteTable('_sync_state', {
+  id: text('id').primaryKey().default('singleton'),
+  // Highest server version applied locally; pulls ask for everything after it.
+  cursor: integer('cursor').notNull().default(0),
+  applying: integer('applying').notNull().default(0),
+  // Server user id this DB is linked to; null = never signed in.
+  accountId: text('account_id'),
+  lastSyncedAt: integer('last_synced_at', { mode: 'timestamp_ms' }),
+});
 
 export const routinesRelations = relations(routines, ({ many }) => ({
   exercises: many(routineExercises),

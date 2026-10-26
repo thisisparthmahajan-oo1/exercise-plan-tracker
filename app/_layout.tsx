@@ -20,6 +20,7 @@ import 'react-native-reanimated';
 import { ThemedText } from '@/components/themed-text';
 import { palette } from '@/constants/theme';
 import { DEFAULT_THEME_ID, THEMES } from '@/constants/themes';
+import { enableForeignKeys } from '@/src/db/client';
 import { useDbMigrations } from '@/src/db/migrate';
 import { seedExercisesIfNeeded } from '@/src/db/seed';
 import { RepoProvider } from '@/src/repos/RepoContext';
@@ -46,6 +47,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!migrated) return;
+    enableForeignKeys();
     seedExercisesIfNeeded()
       .then(() => setSeedReady(true))
       .catch((e) => setSeedError(e instanceof Error ? e : new Error(String(e))));

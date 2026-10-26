@@ -57,6 +57,20 @@
       "when": 1783942258915,
       "tag": "0007_third_maximus",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793023411148,
+      "tag": "0008_sync_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1793023411518,
+      "tag": "0009_sync_triggers",
+      "breakpoints": true
     }
   ]
 }
