@@ -3,6 +3,7 @@ import { createContext, useContext, type ReactNode } from 'react';
 import { sqliteRepos } from './sqlite';
 import type {
   AnalyticsRepo,
+  BodyRepo,
   ExerciseRepo,
   Repos,
   RoutineRepo,
@@ -36,4 +37,7 @@ export function useSessionRepo(): SessionRepo {
 }
 export function useAnalyticsRepo(): AnalyticsRepo {
   return useContext(RepoContext).analytics;
+}
+export function useBodyRepo(): BodyRepo {
+  return useContext(RepoContext).body;
 }

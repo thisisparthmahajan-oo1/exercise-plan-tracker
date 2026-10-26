@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import type {
+  BodyMetricLog,
   Exercise,
   Routine,
   RoutineExercise,
@@ -8,8 +9,10 @@ import type {
   SetLog,
   WorkoutSession,
 } from '@/src/db/schema';
+import { BODY_METRIC_KEYS, type BodyMetricKey } from '@/src/features/body/metrics';
 
-export type { Exercise, Routine, RoutineExercise, RoutineSetPlan, SetLog, WorkoutSession };
+export type { BodyMetricLog, Exercise, Routine, RoutineExercise, RoutineSetPlan, SetLog, WorkoutSession };
+export type { BodyMetricKey };
 
 export type RoutineExerciseWithDetails = RoutineExercise & {
   exercise: Exercise;
@@ -88,6 +91,30 @@ export const newSetLogSchema = z.object({
 });
 export type NewSetLogInput = z.infer<typeof newSetLogSchema>;
 
+export const bodyMetricKeySchema = z.enum(
+  BODY_METRIC_KEYS as [BodyMetricKey, ...BodyMetricKey[]],
+);
+
+// A partial map of metric → value for a single day. A number sets/updates that
+// metric; `null` clears it; an omitted key is left untouched. Built from the
+// catalog so it stays in sync automatically.
+const bodyValuesSchema = z
+  .object(
+    Object.fromEntries(
+      BODY_METRIC_KEYS.map((k) => [k, z.number().min(0).max(1000).nullable()]),
+    ) as Record<BodyMetricKey, z.ZodNullable<z.ZodNumber>>,
+  )
+  .partial();
+
+export const bodyEntryInputSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
+  values: bodyValuesSchema,
+});
+export type BodyEntryInput = z.infer<typeof bodyEntryInputSchema>;
+
+// Most recent recorded value for a metric, with the day it was recorded.
+export type BodyLatest = { metric: BodyMetricKey; value: number; date: string };
+
 export interface ExerciseRepo {
   list(query?: string): Promise<Exercise[]>;
   get(id: string): Promise<Exercise | null>;
@@ -139,9 +166,21 @@ export interface AnalyticsRepo {
   }): Promise<TimeSeriesPoint[]>;
 }
 
+export interface BodyRepo {
+  // Values recorded on a given day, keyed by metric — used to prefill the form.
+  getDay(date: string): Promise<Partial<Record<BodyMetricKey, number>>>;
+  // Upsert the filled metrics for a day; a `null` value clears that metric.
+  logEntry(input: BodyEntryInput): Promise<void>;
+  // Latest value + date per metric that has any data. Order is not guaranteed.
+  latest(): Promise<BodyLatest[]>;
+  // Every recorded point for a metric, oldest first — drives the progress chart.
+  history(metric: BodyMetricKey): Promise<TimeSeriesPoint[]>;
+}
+
 export interface Repos {
   exercises: ExerciseRepo;
   routines: RoutineRepo;
   sessions: SessionRepo;
   analytics: AnalyticsRepo;
+  body: BodyRepo;
 }

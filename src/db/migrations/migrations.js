@@ -8,6 +8,7 @@ import m0003 from './0003_fat_agent_zero.sql';
 import m0004 from './0004_public_odin.sql';
 import m0005 from './0005_overconfident_killer_shrike.sql';
 import m0006 from './0006_hot_ego.sql';
+import m0007 from './0007_third_maximus.sql';
 
   export default {
     journal,
@@ -18,7 +19,8 @@ m0002,
 m0003,
 m0004,
 m0005,
-m0006
+m0006,
+m0007
     }
   }
   

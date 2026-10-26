@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 const nowMs = sql`(unixepoch() * 1000)`;
 
@@ -96,6 +96,25 @@ export const setLogs = sqliteTable('set_logs', {
   completedAt: integer('completed_at', { mode: 'timestamp_ms' }).notNull().default(nowMs),
 });
 
+// Body metrics (bodyweight, body-fat %, tape measurements). Logged at day
+// granularity — one value per metric per calendar date. `metric` is a catalog
+// key from src/features/body/metrics.ts; `date` is a local 'YYYY-MM-DD' string
+// (deliberately day-granular, unlike the moment-precise timestamp_ms used for
+// set logs). The unique (metric, date) index makes re-logging a day an upsert.
+export const bodyMetricLogs = sqliteTable(
+  'body_metric_logs',
+  {
+    id: text('id').primaryKey(),
+    metric: text('metric').notNull(),
+    value: real('value').notNull(),
+    date: text('date').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().default(nowMs),
+  },
+  (t) => ({
+    metricDateUnique: uniqueIndex('body_metric_date_unq').on(t.metric, t.date),
+  }),
+);
+
 export const routinesRelations = relations(routines, ({ many }) => ({
   exercises: many(routineExercises),
 }));
@@ -152,3 +171,5 @@ export type SetLog = typeof setLogs.$inferSelect;
 export type NewSetLogRow = typeof setLogs.$inferInsert;
 export type AppSettings = typeof appSettings.$inferSelect;
 export type NewAppSettingsRow = typeof appSettings.$inferInsert;
+export type BodyMetricLog = typeof bodyMetricLogs.$inferSelect;
+export type NewBodyMetricLogRow = typeof bodyMetricLogs.$inferInsert;

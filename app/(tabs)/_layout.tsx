@@ -58,6 +58,13 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="body"
+        options={{
+          title: 'Body',
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="ruler.fill" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
