@@ -13,13 +13,13 @@ const loginSchema = z.object({
   password: z.string().min(1),
 }) satisfies z.ZodType<LoginRequest, unknown>;
 
-export function loginHandler(cols: Collections, jwtSecret: string) {
+export function loginHandler(getCols: () => Promise<Collections>, jwtSecret: string) {
   return async (req: Request, res: Response) => {
     const parsed = loginSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: 'Invalid request' });
     const { email, password } = parsed.data;
 
-    const user = await cols.users.findOne({ email });
+    const user = await (await getCols()).users.findOne({ email });
     const ok = user != null && (await bcrypt.compare(password, user.passwordHash));
     if (!ok) return res.status(401).json({ error: 'Wrong email or password' });
 

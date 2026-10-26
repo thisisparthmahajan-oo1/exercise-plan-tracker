@@ -1,6 +1,8 @@
 import { MongoClient, type Collection, type Db } from 'mongodb';
 
 import type { RowData } from '../../src/sync/protocol';
+import { env } from './env';
+import type { LockDoc } from './lock';
 
 export type UserDoc = {
   _id: string;
@@ -29,6 +31,7 @@ export type Collections = {
   users: Collection<UserDoc>;
   records: Collection<RecordDoc>;
   counters: Collection<CounterDoc>;
+  locks: Collection<LockDoc>;
 };
 
 export async function connect(uri: string, dbName: string) {
@@ -45,7 +48,21 @@ export function collections(db: Db): Collections {
     users: db.collection<UserDoc>('users'),
     records: db.collection<RecordDoc>('records'),
     counters: db.collection<CounterDoc>('counters'),
+    locks: db.collection<LockDoc>('locks'),
   };
+}
+
+// One connection per server instance, opened on first use and reused across
+// requests (serverless instances stay warm between invocations).
+let shared: Promise<Collections> | null = null;
+export function getCollections(): Promise<Collections> {
+  shared ??= connect(env.mongoUri, env.mongoDb)
+    .then((c) => c.cols)
+    .catch((e) => {
+      shared = null;
+      throw e;
+    });
+  return shared;
 }
 
 async function ensureIndexes(cols: Collections) {

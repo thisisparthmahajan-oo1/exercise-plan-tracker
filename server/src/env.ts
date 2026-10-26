@@ -4,9 +4,19 @@ function required(name: string): string {
   return v;
 }
 
+// Read on access, not at import, so modules can be imported (e.g. by tests)
+// without a full environment.
 export const env = {
-  mongoUri: required('MONGODB_URI'),
-  mongoDb: process.env.MONGODB_DB ?? 'fitness',
-  jwtSecret: required('JWT_SECRET'),
-  port: Number(process.env.PORT ?? 8787),
+  get mongoUri() {
+    return required('MONGODB_URI');
+  },
+  get mongoDb() {
+    return process.env.MONGODB_DB ?? 'fitness';
+  },
+  get jwtSecret() {
+    return required('JWT_SECRET');
+  },
+  get port() {
+    return Number(process.env.PORT ?? 8787);
+  },
 };

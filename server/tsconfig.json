@@ -10,5 +10,5 @@
     "rootDir": "..",
     "types": ["node"]
   },
-  "include": ["src", "scripts", "../src/sync/protocol.ts", "../src/sync/tables.ts"]
+  "include": ["src", "scripts", "test/*.ts", "../src/sync/protocol.ts", "../src/sync/tables.ts"]
 }

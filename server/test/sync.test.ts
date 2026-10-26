@@ -26,7 +26,7 @@ before(async () => {
     passwordHash: await hashPassword('pw'),
     createdAt: new Date(),
   });
-  server = createApp(conn.cols, 'secret').listen(0);
+  server = createApp(async () => conn.cols, 'secret').listen(0);
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
 
@@ -126,4 +126,16 @@ test('rejects unknown tables and mismatched ids', async () => {
     changes: [{ ...row('x', 1), data: { id: 'y' } }],
   });
   assert.equal(badId.status, 400);
+});
+
+test('concurrent pushes serialize: every row lands and none are skipped', async () => {
+  const { body: start } = await call<PullResponse>('GET', '/sync/pull?since=0');
+  const ids = ['p1', 'p2', 'p3', 'p4', 'p5'];
+  const results = await Promise.all(
+    ids.map((id) => call<PushResponse>('POST', '/sync/push', { changes: [row(id, 500)] })),
+  );
+  assert.ok(results.every((r) => r.status === 200));
+  const after = await call<PullResponse>('GET', `/sync/pull?since=${start.nextCursor}`);
+  assert.deepEqual(after.body.changes.map((c) => c.id).sort(), ids);
+  assert.equal(await client.db('test').collection('locks').countDocuments(), 0, 'lock released');
 });

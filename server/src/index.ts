@@ -1,15 +1,7 @@
+// Entry point for Vercel (zero-config Express: a default-exported app in
+// src/index.ts). For a long-running local process, see src/local.ts.
 import { createApp } from './app';
 import { env } from './env';
-import { connect } from './mongo';
+import { getCollections } from './mongo';
 
-async function main() {
-  const { cols } = await connect(env.mongoUri, env.mongoDb);
-  createApp(cols, env.jwtSecret).listen(env.port, () => {
-    console.log(`sync server listening on :${env.port}`);
-  });
-}
-
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+export default createApp(getCollections, env.jwtSecret);

@@ -6,9 +6,9 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "dev": "tsx watch --env-file=.env src/index.ts",
+    "dev": "tsx watch --env-file=.env src/local.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server/src/index.js",
+    "start": "node dist/server/src/local.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test test/*.test.ts && npm run test:client",
     "create-user": "tsx --env-file=.env scripts/create-user.ts",

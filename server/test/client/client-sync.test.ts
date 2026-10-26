@@ -61,7 +61,7 @@ before(async () => {
     passwordHash: await hashPassword('pw'),
     createdAt: new Date(),
   });
-  server = createApp(conn.cols, 'secret').listen(0);
+  server = createApp(async () => conn.cols, 'secret').listen(0);
   process.env.EXPO_PUBLIC_SYNC_URL = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   engine = await import('../../../src/sync/engine');
 
@@ -188,7 +188,7 @@ test('works offline: edits queue and drain once the server is reachable', async 
   const conn = await connect(mongo.getUri(), 'e2e');
   await client.close();
   client = conn.client;
-  server = createApp(conn.cols, 'secret').listen(Number(new URL(realUrl!).port));
+  server = createApp(async () => conn.cols, 'secret').listen(Number(new URL(realUrl!).port));
   await new Promise((r) => server.once('listening', r));
   await engine.syncNow();
   assert.equal(engine.getSyncStatus().error, null);
