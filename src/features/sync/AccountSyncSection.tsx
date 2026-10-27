@@ -15,7 +15,7 @@ export function AccountSyncSection() {
       <SectionLabel>Account & Sync</SectionLabel>
       {!status.configured ? (
         <NotConfigured />
-      ) : status.email ? (
+      ) : status.signedIn ? (
         <SignedIn status={status} />
       ) : (
         <SignInForm lastError={status.error} />
@@ -41,7 +41,7 @@ function SignedIn({ status }: { status: SyncStatus }) {
   const onSignOut = () =>
     Alert.alert(
       'Sign out?',
-      'Your data stays on this phone. Changes made while signed out upload when you sign back in.',
+      'Your data stays on this phone. Changes made while signed out upload when you enter the token again.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
@@ -50,7 +50,7 @@ function SignedIn({ status }: { status: SyncStatus }) {
 
   return (
     <Surface style={[styles.card, { borderColor: accent.accentEdge }]}>
-      <ThemedText style={styles.title}>{status.email}</ThemedText>
+      <ThemedText style={styles.title}>Cloud sync on</ThemedText>
       <ThemedText style={[styles.hint, { color: status.error ? palette.danger : accent.textDim }]}>
         {statusLine(status)}
       </ThemedText>
@@ -70,8 +70,7 @@ function SignedIn({ status }: { status: SyncStatus }) {
 
 function SignInForm({ lastError }: { lastError: string | null }) {
   const accent = useAccent();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,8 +78,8 @@ function SignInForm({ lastError }: { lastError: string | null }) {
     setBusy(true);
     setError(null);
     try {
-      await signIn(email.trim(), password);
-      setPassword('');
+      await signIn(token.trim());
+      setToken('');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -93,22 +92,15 @@ function SignInForm({ lastError }: { lastError: string | null }) {
     <Surface style={[styles.card, { borderColor: accent.accentEdge }]}>
       <ThemedText style={styles.title}>Back up & sync</ThemedText>
       <ThemedText style={[styles.hint, { color: accent.textDim }]}>
-        Sign in to copy your history to the cloud and keep devices in sync. The app keeps working
-        offline either way.
+        Enter the server's access token to copy your history to the cloud and keep devices in
+        sync. The app keeps working offline either way.
       </ThemedText>
       <StyledTextInput
-        value={email}
-        onChangeText={setEmail}
-        placeholder="Email"
+        value={token}
+        onChangeText={setToken}
+        placeholder="Access token"
         autoCapitalize="none"
         autoCorrect={false}
-        keyboardType="email-address"
-        textContentType="username"
-      />
-      <StyledTextInput
-        value={password}
-        onChangeText={setPassword}
-        placeholder="Password"
         secureTextEntry
         textContentType="password"
         onSubmitEditing={onSubmit}
@@ -117,8 +109,8 @@ function SignInForm({ lastError }: { lastError: string | null }) {
         <ThemedText style={[styles.hint, { color: palette.danger }]}>{shownError}</ThemedText>
       ) : null}
       <PrimaryButton
-        label={busy ? 'Signing in…' : 'Sign in'}
-        disabled={busy || !email.trim() || !password}
+        label={busy ? 'Connecting…' : 'Connect'}
+        disabled={busy || !token.trim()}
         onPress={onSubmit}
       />
     </Surface>

@@ -8,6 +8,6 @@ import { env } from './env';
 import { getCollections } from './mongo';
 
 const app = express();
-configureApp(app, getCollections, env.jwtSecret);
+configureApp(app, getCollections, env.appToken);
 
 export default app;

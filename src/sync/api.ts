@@ -1,9 +1,9 @@
 import type {
-  LoginRequest,
-  LoginResponse,
   PullResponse,
   PushRequest,
   PushResponse,
+  SessionRequest,
+  SessionResponse,
 } from './protocol';
 
 // Inlined at build time from .env (EXPO_PUBLIC_ vars). Unset = sync disabled;
@@ -37,8 +37,11 @@ async function request<T>(path: string, init: RequestInit & { token?: string }):
 }
 
 export const syncApi = {
-  login(input: LoginRequest) {
-    return request<LoginResponse>('/auth/login', { method: 'POST', body: JSON.stringify(input) });
+  createSession(input: SessionRequest) {
+    return request<SessionResponse>('/auth/session', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
   },
   push(token: string, body: PushRequest) {
     return request<PushResponse>('/sync/push', {

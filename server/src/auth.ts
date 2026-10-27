@@ -1,51 +1,69 @@
-import bcrypt from 'bcryptjs';
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
 import type { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 
-import type { LoginRequest, LoginResponse } from '../../src/sync/protocol';
-import type { Collections } from './mongo';
+import type { SessionRequest, SessionResponse } from '../../src/sync/protocol';
 
-const TOKEN_TTL = '365d';
+// Single-owner access, same scheme as margin: the server has one APP_TOKEN.
+// A device enters it once and gets back a session `<expiresAtMs>.<hmac>`
+// signed with APP_TOKEN — the server keeps no session or user state, and
+// changing APP_TOKEN signs every device out. Sessions are long-lived because
+// sync runs silently in the background; an expired one just pauses sync until
+// the token is entered again.
 
-const loginSchema = z.object({
-  email: z.string().email().transform((e) => e.toLowerCase()),
-  password: z.string().min(1),
-}) satisfies z.ZodType<LoginRequest, unknown>;
+export const SESSION_TTL_MS = 365 * 24 * 60 * 60_000;
 
-export function loginHandler(getCols: () => Promise<Collections>, jwtSecret: string) {
-  return async (req: Request, res: Response) => {
-    const parsed = loginSchema.safeParse(req.body);
-    if (!parsed.success) return res.status(400).json({ error: 'Invalid request' });
-    const { email, password } = parsed.data;
+// Every synced row is stored under this owner. The field stays in the data
+// model so separate accounts can be added later without migrating records.
+export const OWNER_ID = 'owner';
 
-    const user = await (await getCols()).users.findOne({ email });
-    const ok = user != null && (await bcrypt.compare(password, user.passwordHash));
-    if (!ok) return res.status(401).json({ error: 'Wrong email or password' });
+const sign = (appToken: string, expiresAt: number) =>
+  createHmac('sha256', appToken).update(`fitness-session:${expiresAt}`).digest('base64url');
 
-    const token = jwt.sign({}, jwtSecret, { subject: user._id, expiresIn: TOKEN_TTL });
-    const body: LoginResponse = { token, userId: user._id, email: user.email };
-    res.json(body);
+export function safeEqual(a: string, b: string): boolean {
+  const x = Buffer.from(a);
+  const y = Buffer.from(b);
+  return x.length === y.length && timingSafeEqual(x, y);
+}
+
+export function createSession(appToken: string, now = Date.now()): SessionResponse {
+  const expiresAt = now + SESSION_TTL_MS;
+  return { session: `${expiresAt}.${sign(appToken, expiresAt)}`, expiresAt };
+}
+
+export function isValidSession(appToken: string, session: string, now = Date.now()): boolean {
+  const [exp, sig] = session.split('.');
+  const expiresAt = Number(exp);
+  if (!sig || !Number.isFinite(expiresAt) || expiresAt <= now) return false;
+  return safeEqual(sig, sign(appToken, expiresAt));
+}
+
+const sessionRequestSchema = z.object({
+  token: z.string().trim().min(1),
+}) satisfies z.ZodType<SessionRequest, unknown>;
+
+export function sessionHandler(appToken: string) {
+  return (req: Request, res: Response) => {
+    const parsed = sessionRequestSchema.safeParse(req.body);
+    if (!parsed.success || !safeEqual(parsed.data.token, appToken)) {
+      return res.status(401).json({ error: 'That token doesn’t match the server' });
+    }
+    res.json(createSession(appToken));
   };
 }
 
-// Populates res.locals.userId from a `Bearer <jwt>` header, or 401s.
-export function requireAuth(jwtSecret: string) {
+// Accepts a device session, or APP_TOKEN itself (handy for curl). Sets
+// res.locals.userId, or 401s.
+export function requireAuth(appToken: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     const header = req.header('authorization') ?? '';
-    const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-    if (!token) return res.status(401).json({ error: 'Not signed in' });
-    try {
-      const payload = jwt.verify(token, jwtSecret);
-      if (typeof payload === 'string' || !payload.sub) throw new Error('bad token');
-      res.locals.userId = payload.sub;
-      next();
-    } catch {
-      res.status(401).json({ error: 'Session expired — sign in again' });
+    const bearer = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+    if (!bearer) return res.status(401).json({ error: 'Not signed in' });
+    if (!isValidSession(appToken, bearer) && !safeEqual(bearer, appToken)) {
+      return res.status(401).json({ error: 'Session expired — enter the token again' });
     }
+    res.locals.userId = OWNER_ID;
+    next();
   };
-}
-
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
 }

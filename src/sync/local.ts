@@ -36,14 +36,15 @@ export function markSynced(at: number): void {
   sqliteDb.runSync("UPDATE _sync_state SET last_synced_at = ? WHERE id = 'singleton'", at);
 }
 
-// Links this database to a server account. On first link every existing
-// syncable row is queued for upload, so the account starts with the device's
-// full history. Re-linking the same account is a no-op.
+// Links this database to a sync server (identified by its URL — one owner per
+// server). On first link every existing syncable row is queued for upload, so
+// the server starts with the device's full history. Re-linking the same
+// server is a no-op.
 export function linkAccount(accountId: string): void {
   const { accountId: current } = readSyncState();
   if (current === accountId) return;
   if (current != null) {
-    throw new Error('This device is already linked to a different account.');
+    throw new Error('This phone already syncs with a different server.');
   }
   const now = Date.now();
   sqliteDb.withTransactionSync(() => {

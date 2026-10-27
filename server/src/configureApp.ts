@@ -1,6 +1,6 @@
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 
-import { loginHandler, requireAuth } from './auth';
+import { requireAuth, sessionHandler } from './auth';
 import type { Collections } from './mongo';
 import { pullHandler, pushHandler } from './sync';
 
@@ -11,7 +11,7 @@ import { pullHandler, pushHandler } from './sync';
 export function configureApp(
   app: Express,
   getCols: () => Promise<Collections>,
-  jwtSecret: string,
+  appToken: string,
 ): Express {
   // 200 rows of a few hundred bytes each fits comfortably.
   app.use(express.json({ limit: '2mb' }));
@@ -19,9 +19,9 @@ export function configureApp(
   app.get('/health', (_req, res) => {
     res.json({ ok: true });
   });
-  app.post('/auth/login', loginHandler(getCols, jwtSecret));
+  app.post('/auth/session', sessionHandler(appToken));
 
-  const auth = requireAuth(jwtSecret);
+  const auth = requireAuth(appToken);
   app.post('/sync/push', auth, pushHandler(getCols));
   app.get('/sync/pull', auth, pullHandler(getCols));
 

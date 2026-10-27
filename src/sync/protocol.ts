@@ -31,5 +31,7 @@ export type PullResponse = {
   hasMore: boolean;
 };
 
-export type LoginRequest = { email: string; password: string };
-export type LoginResponse = { token: string; userId: string; email: string };
+// Sign-in: trade the server's APP_TOKEN for a device session. The device keeps
+// only the session, never the token.
+export type SessionRequest = { token: string };
+export type SessionResponse = { session: string; expiresAt: number };

@@ -143,7 +143,7 @@ export const syncState = sqliteTable('_sync_state', {
   // Highest server version applied locally; pulls ask for everything after it.
   cursor: integer('cursor').notNull().default(0),
   applying: integer('applying').notNull().default(0),
-  // Server user id this DB is linked to; null = never signed in.
+  // Sync server (its URL) this DB is linked to; null = never signed in.
   accountId: text('account_id'),
   lastSyncedAt: integer('last_synced_at', { mode: 'timestamp_ms' }),
 });

@@ -25,7 +25,7 @@ const PUSH_BATCH = 200;
 
 export type SyncStatus = {
   configured: boolean;
-  email: string | null;
+  signedIn: boolean;
   syncing: boolean;
   pending: number;
   lastSyncedAt: number | null;
@@ -35,7 +35,7 @@ export type SyncStatus = {
 let creds: Credentials | null = null;
 let status: SyncStatus = {
   configured: SYNC_URL != null,
-  email: null,
+  signedIn: false,
   syncing: false,
   pending: 0,
   lastSyncedAt: null,
@@ -64,7 +64,7 @@ export function refreshPending(): void {
 export async function initSync(): Promise<void> {
   creds = await loadCredentials();
   setStatus({
-    email: creds?.email ?? null,
+    signedIn: creds != null,
     pending: pendingCount(),
     lastSyncedAt: readSyncState().lastSyncedAt,
   });
@@ -74,22 +74,26 @@ export function isSignedIn(): boolean {
   return creds != null && SYNC_URL != null;
 }
 
-export async function signIn(email: string, password: string): Promise<void> {
-  const res = await syncApi.login({ email, password });
-  // Throws before anything is stored if the device belongs to another account.
-  linkAccount(res.userId);
-  creds = { token: res.token, userId: res.userId, email: res.email };
+// Trades the server's access token for a device session. The first sign-in
+// links this database to the server and queues the full local history for
+// upload.
+export async function signIn(token: string): Promise<void> {
+  const res = await syncApi.createSession({ token });
+  // Throws before anything is stored if this DB already syncs with another
+  // server. The server origin is the account identity: one owner per server.
+  linkAccount(SYNC_URL!);
+  creds = { session: res.session, expiresAt: res.expiresAt };
   await saveCredentials(creds);
-  setStatus({ email: res.email, error: null, pending: pendingCount() });
+  setStatus({ signedIn: true, error: null, pending: pendingCount() });
   void syncNow();
 }
 
-// Forgets the session only. Local data and the account link stay, so signing
-// back in to the same account resumes where it left off.
+// Forgets the session only. Local data and the server link stay, so signing
+// back in resumes where it left off.
 export async function signOut(): Promise<void> {
   creds = null;
   await clearCredentials();
-  setStatus({ email: null, error: null });
+  setStatus({ signedIn: false, error: null });
 }
 
 let inFlight: Promise<void> | null = null;
@@ -103,11 +107,11 @@ export function syncNow(): Promise<void> {
 }
 
 async function runSync(): Promise<void> {
-  const token = creds!.token;
+  const session = creds!.session;
   setStatus({ syncing: true });
   try {
-    await pushAll(token);
-    await pullAll(token);
+    await pushAll(session);
+    await pullAll(session);
     const now = Date.now();
     markSynced(now);
     setStatus({ lastSyncedAt: now, error: null });
@@ -119,11 +123,11 @@ async function runSync(): Promise<void> {
   }
 }
 
-async function pushAll(token: string): Promise<void> {
+async function pushAll(session: string): Promise<void> {
   for (;;) {
     const { changes, entries } = collectPush(PUSH_BATCH);
     if (changes.length === 0) return;
-    const { rejected } = await syncApi.push(token, { changes });
+    const { rejected } = await syncApi.push(session, { changes });
     ackPushed(entries);
     // The server held newer edits for these rows — adopt them.
     if (rejected.length > 0) applyRemote(rejected);
@@ -137,11 +141,11 @@ async function pushAll(token: string): Promise<void> {
 // Fetches every page first, then applies them in one transaction: a child row
 // may sit on an earlier page than its parent (the parent was edited later and
 // got a higher version), so pages can't be applied one at a time.
-async function pullAll(token: string): Promise<void> {
+async function pullAll(session: string): Promise<void> {
   let cursor = readSyncState().cursor;
   const changes: SyncChange[] = [];
   for (;;) {
-    const page = await syncApi.pull(token, cursor);
+    const page = await syncApi.pull(session, cursor);
     changes.push(...page.changes);
     cursor = page.nextCursor;
     if (!page.hasMore) break;

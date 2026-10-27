@@ -10,13 +10,13 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import express from 'express';
 
 import { configureApp } from '../../src/configureApp';
-import { hashPassword } from '../../src/auth';
 import { connect } from '../../src/mongo';
 import { createDevice, sqliteDb, useDevice } from './fake-db-client';
 import { useDeviceStore } from './fake-secure-store';
 
 type Engine = typeof import('../../../src/sync/engine');
 let engine: Engine;
+const APP_TOKEN = 'test-app-token-0123456789abcdef';
 let mongo: MongoMemoryServer;
 let client: MongoClient;
 let server: ReturnType<ReturnType<typeof express>['listen']>;
@@ -57,13 +57,7 @@ before(async () => {
   mongo = await MongoMemoryServer.create();
   const conn = await connect(mongo.getUri(), 'e2e');
   client = conn.client;
-  await conn.cols.users.insertOne({
-    _id: 'parth',
-    email: 'me@example.com',
-    passwordHash: await hashPassword('pw'),
-    createdAt: new Date(),
-  });
-  server = configureApp(express(), async () => conn.cols, 'secret').listen(0);
+  server = configureApp(express(), async () => conn.cols, APP_TOKEN).listen(0);
   process.env.EXPO_PUBLIC_SYNC_URL = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   engine = await import('../../../src/sync/engine');
 
@@ -104,7 +98,7 @@ test('first sign-in uploads existing history; nothing local is lost', async () =
   const before = dump();
   assert.equal(count('_sync_outbox'), 0);
 
-  await engine.signIn('me@example.com', 'pw');
+  await engine.signIn(APP_TOKEN);
   await engine.syncNow();
 
   assert.equal(engine.getSyncStatus().error, null);
@@ -115,7 +109,7 @@ test('first sign-in uploads existing history; nothing local is lost', async () =
 
 test('a fresh device signs in and receives the full history', async () => {
   await onDevice('B');
-  await engine.signIn('me@example.com', 'pw');
+  await engine.signIn(APP_TOKEN);
   await engine.syncNow();
   assert.equal(engine.getSyncStatus().error, null);
   const onB = dump();
@@ -190,7 +184,7 @@ test('works offline: edits queue and drain once the server is reachable', async 
   const conn = await connect(mongo.getUri(), 'e2e');
   await client.close();
   client = conn.client;
-  server = configureApp(express(), async () => conn.cols, 'secret').listen(Number(new URL(realUrl!).port));
+  server = configureApp(express(), async () => conn.cols, APP_TOKEN).listen(Number(new URL(realUrl!).port));
   await new Promise((r) => server.once('listening', r));
   await engine.syncNow();
   assert.equal(engine.getSyncStatus().error, null);

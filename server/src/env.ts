@@ -13,8 +13,12 @@ export const env = {
   get mongoDb() {
     return process.env.MONGODB_DB ?? 'fitness';
   },
-  get jwtSecret() {
-    return required('JWT_SECRET');
+  // The one access secret (see auth.ts). Required: without it the API would
+  // be open to anyone.
+  get appToken() {
+    const token = required('APP_TOKEN');
+    if (token.length < 24) throw new Error('APP_TOKEN must be at least 24 characters');
+    return token;
   },
   get port() {
     return Number(process.env.PORT ?? 8787);

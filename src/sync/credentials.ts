@@ -1,13 +1,16 @@
 import * as SecureStore from 'expo-secure-store';
 
-// The server session, kept in the iOS Keychain rather than SQLite.
-export type Credentials = { token: string; userId: string; email: string };
+// The device session (never the APP_TOKEN itself), kept in the iOS Keychain
+// rather than SQLite.
+export type Credentials = { session: string; expiresAt: number };
 
-const KEY = 'sync.credentials';
+const KEY = 'sync.session';
 
 export async function loadCredentials(): Promise<Credentials | null> {
   const raw = await SecureStore.getItemAsync(KEY);
-  return raw ? (JSON.parse(raw) as Credentials) : null;
+  if (!raw) return null;
+  const creds = JSON.parse(raw) as Credentials;
+  return creds.expiresAt > Date.now() ? creds : null;
 }
 
 export async function saveCredentials(creds: Credentials): Promise<void> {

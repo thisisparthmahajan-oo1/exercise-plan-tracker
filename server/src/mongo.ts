@@ -4,13 +4,6 @@ import type { RowData } from '../../src/sync/protocol';
 import { env } from './env';
 import type { LockDoc } from './lock';
 
-export type UserDoc = {
-  _id: string;
-  email: string;
-  passwordHash: string;
-  createdAt: Date;
-};
-
 // Latest known state of one synced row for one user. `version` is a per-user
 // monotonically increasing number assigned on every accepted write; pulls page
 // through it.
@@ -28,7 +21,6 @@ export type RecordDoc = {
 export type CounterDoc = { _id: string; version: number };
 
 export type Collections = {
-  users: Collection<UserDoc>;
   records: Collection<RecordDoc>;
   counters: Collection<CounterDoc>;
   locks: Collection<LockDoc>;
@@ -45,7 +37,6 @@ export async function connect(uri: string, dbName: string) {
 
 export function collections(db: Db): Collections {
   return {
-    users: db.collection<UserDoc>('users'),
     records: db.collection<RecordDoc>('records'),
     counters: db.collection<CounterDoc>('counters'),
     locks: db.collection<LockDoc>('locks'),
@@ -66,7 +57,6 @@ export function getCollections(): Promise<Collections> {
 }
 
 async function ensureIndexes(cols: Collections) {
-  await cols.users.createIndex({ email: 1 }, { unique: true });
   await cols.records.createIndex({ userId: 1, table: 1, id: 1 }, { unique: true });
   await cols.records.createIndex({ userId: 1, version: 1 });
 }

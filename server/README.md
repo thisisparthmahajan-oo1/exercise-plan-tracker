@@ -4,7 +4,7 @@ Offline-first sync backend for Exercise Logger. The phone's SQLite stays the
 source of truth; this server keeps each account's latest copy of every row and
 lets devices push/pull changes (last-write-wins per row).
 
-- `POST /auth/login` → JWT (accounts are created with `npm run create-user`; there is no signup)
+- `POST /auth/session {token}` → device session. Single owner, same scheme as margin: one `APP_TOKEN`, entered once per device; the device keeps only an HMAC-signed session (1 year). No user accounts or session state on the server
 - `POST /sync/push`, `GET /sync/pull?since=<cursor>` (Bearer token)
 - `GET /health`
 
@@ -14,7 +14,7 @@ lets devices push/pull changes (last-write-wins per row).
 | ------------- | ------------------------------------------------------------------ |
 | `MONGODB_URI` | Atlas `mongodb+srv://…` string                                     |
 | `MONGODB_DB`  | Database name, default `fitness` (created on first write)          |
-| `JWT_SECRET`  | Long random string (`openssl rand -hex 32`). Rotating it signs every device out |
+| `APP_TOKEN`   | Access secret (`openssl rand -hex 24`, 24+ chars). Entered once in the app; changing it signs every device out |
 | `PORT`        | Local only, default `8787`                                         |
 
 Copy `.env.example` to `.env` for local use. `.env` is gitignored — never commit it.
@@ -25,7 +25,6 @@ Copy `.env.example` to `.env` for local use. `.env` is gitignored — never comm
 npm install
 npm run dev        # tsx watch, reads .env
 npm test           # server tests + two-device client sync tests (in-memory Mongo)
-npm run create-user -- you@example.com 'a-strong-password'
 ```
 
 ## Deploy (Vercel)
@@ -36,7 +35,6 @@ npm run create-user -- you@example.com 'a-strong-password'
 3. Atlas → Network Access must allow `0.0.0.0/0` (Vercel has no fixed IPs).
    Use a database user scoped to the `fitness` database only.
 4. Deploy, then check `https://<project>.vercel.app/health`.
-5. Create your account against the same database (from `server/`, with `.env`
-   pointing at Atlas): `npm run create-user -- <email> <password>`.
-6. In the app repo root, set `EXPO_PUBLIC_SYNC_URL=https://<project>.vercel.app`
-   in `.env.local` (gitignored), then rebuild the app.
+5. In the app repo root, set `EXPO_PUBLIC_SYNC_URL=https://<project>.vercel.app`
+   in `.env.local` (gitignored), then rebuild the app. In the app: Settings →
+   Account & Sync → paste `APP_TOKEN` → Connect.
