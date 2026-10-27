@@ -68,4 +68,28 @@ export const sqliteDb = {
       throw e;
     }
   },
+
+  // Async API, as used by src/sync/local.ts.
+  async getAllAsync<T>(sql: string, ...args: unknown[]): Promise<T[]> {
+    return sqliteDb.getAllSync<T>(sql, ...args);
+  },
+  async getFirstAsync<T>(sql: string, ...args: unknown[]): Promise<T | null> {
+    return sqliteDb.getFirstSync<T>(sql, ...args);
+  },
+  async runAsync(sql: string, ...args: unknown[]): Promise<void> {
+    sqliteDb.runSync(sql, ...args);
+  },
+  async execAsync(sql: string): Promise<void> {
+    sqliteDb.execSync(sql);
+  },
+  async withTransactionAsync(task: () => Promise<void>): Promise<void> {
+    db().exec('BEGIN');
+    try {
+      await task();
+      db().exec('COMMIT');
+    } catch (e) {
+      db().exec('ROLLBACK');
+      throw e;
+    }
+  },
 };

@@ -34,7 +34,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     // table catches edits from every feature without coupling them to sync.
     const dbChanges = addDatabaseChangeListener((e) => {
       if (e.tableName !== '_sync_outbox') return;
-      refreshPending();
+      void refreshPending();
       if (debounce) clearTimeout(debounce);
       debounce = setTimeout(() => {
         if (getSyncStatus().pending > 0) void syncNow();

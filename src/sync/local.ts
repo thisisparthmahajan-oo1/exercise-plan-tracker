@@ -1,6 +1,11 @@
 // The SQLite side of sync: turning the outbox into outgoing changes, and
-// writing incoming changes into local tables. Everything here is synchronous
-// (expo-sqlite sync API) so each step is one uninterrupted unit of work.
+// writing incoming changes into local tables.
+//
+// Uses expo-sqlite's async API throughout. On web the sync API allocates a
+// 1 MB SharedArrayBuffer per call, which a bulk pull (thousands of calls)
+// exhausts; async calls are plain worker messages, and don't block the UI
+// while a large batch is applied. Multi-step writes run in
+// withTransactionAsync, so each is still atomic.
 
 import { sqliteDb } from '@/src/db/client';
 
@@ -15,8 +20,8 @@ export type SyncStateRow = {
   lastSyncedAt: number | null;
 };
 
-export function readSyncState(): SyncStateRow {
-  const row = sqliteDb.getFirstSync<{
+export async function readSyncState(): Promise<SyncStateRow> {
+  const row = await sqliteDb.getFirstAsync<{
     cursor: number;
     account_id: string | null;
     last_synced_at: number | null;
@@ -28,36 +33,37 @@ export function readSyncState(): SyncStateRow {
   };
 }
 
-export function pendingCount(): number {
-  return sqliteDb.getFirstSync<{ n: number }>('SELECT COUNT(*) AS n FROM _sync_outbox')?.n ?? 0;
+export async function pendingCount(): Promise<number> {
+  const row = await sqliteDb.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM _sync_outbox');
+  return row?.n ?? 0;
 }
 
-export function markSynced(at: number): void {
-  sqliteDb.runSync("UPDATE _sync_state SET last_synced_at = ? WHERE id = 'singleton'", at);
+export async function markSynced(at: number): Promise<void> {
+  await sqliteDb.runAsync("UPDATE _sync_state SET last_synced_at = ? WHERE id = 'singleton'", at);
 }
 
 // Links this database to a sync server (identified by its URL — one owner per
 // server). On first link every existing syncable row is queued for upload, so
 // the server starts with the device's full history. Re-linking the same
 // server is a no-op.
-export function linkAccount(accountId: string): void {
-  const { accountId: current } = readSyncState();
+export async function linkAccount(accountId: string): Promise<void> {
+  const { accountId: current } = await readSyncState();
   if (current === accountId) return;
   if (current != null) {
     throw new Error('This phone already syncs with a different server.');
   }
   const now = Date.now();
-  sqliteDb.withTransactionSync(() => {
+  await sqliteDb.withTransactionAsync(async () => {
     for (const table of SYNCED_TABLE_ORDER) {
       const where = tableDef(table).syncableWhere ?? '1';
-      sqliteDb.runSync(
+      await sqliteDb.runAsync(
         `INSERT INTO _sync_outbox (table_name, row_id, changed_at)
          SELECT '${table}', id, ? FROM ${table} WHERE ${where}
          ON CONFLICT (table_name, row_id) DO NOTHING`,
         now,
       );
     }
-    sqliteDb.runSync(
+    await sqliteDb.runAsync(
       "UPDATE _sync_state SET account_id = ?, cursor = 0 WHERE id = 'singleton'",
       accountId,
     );
@@ -72,11 +78,15 @@ const tableRank = new Map<string, number>(SYNCED_TABLE_ORDER.map((t, i) => [t, i
 // can't be sent are dropped from the outbox (never the row itself): rows of
 // unknown tables, built-in exercises, and pre-existing orphans whose required
 // parent no longer exists.
-export function collectPush(limit: number): { changes: SyncChange[]; entries: OutboxEntry[] } {
-  const all = sqliteDb
-    .getAllSync<{ table_name: string; row_id: string; changed_at: number }>(
-      'SELECT table_name, row_id, changed_at FROM _sync_outbox',
-    )
+export async function collectPush(
+  limit: number,
+): Promise<{ changes: SyncChange[]; entries: OutboxEntry[] }> {
+  const rows = await sqliteDb.getAllAsync<{
+    table_name: string;
+    row_id: string;
+    changed_at: number;
+  }>('SELECT table_name, row_id, changed_at FROM _sync_outbox');
+  const all = rows
     .map((r) => ({ table: r.table_name, rowId: r.row_id, changedAt: r.changed_at }))
     .sort(
       (a, b) =>
@@ -88,40 +98,43 @@ export function collectPush(limit: number): { changes: SyncChange[]; entries: Ou
   const entries: OutboxEntry[] = [];
   for (const entry of all) {
     if (changes.length >= limit) break;
-    const change = toOutgoingChange(entry);
+    const change = await toOutgoingChange(entry);
     if (change) {
       changes.push(change);
       entries.push(entry);
     } else {
-      dropOutboxEntry(entry.table, entry.rowId, entry.changedAt);
+      await dropOutboxEntry(entry.table, entry.rowId, entry.changedAt);
     }
   }
   return { changes, entries };
 }
 
-function toOutgoingChange(entry: OutboxEntry): SyncChange | null {
+async function toOutgoingChange(entry: OutboxEntry): Promise<SyncChange | null> {
   if (!isSyncedTable(entry.table)) return null;
   const table = entry.table;
-  const row = sqliteDb.getFirstSync<RowData>(`SELECT * FROM ${table} WHERE id = ?`, entry.rowId);
+  const row = await sqliteDb.getFirstAsync<RowData>(
+    `SELECT * FROM ${table} WHERE id = ?`,
+    entry.rowId,
+  );
   if (!row) {
     return { table, id: entry.rowId, data: null, deleted: true, clientUpdatedAt: entry.changedAt };
   }
-  if (!isSyncable(table, entry.rowId)) return null;
-  const data = withResolvedParents(table, row);
+  if (!(await isSyncable(table, entry.rowId))) return null;
+  const data = await withResolvedParents(table, row);
   if (!data) return null;
   return { table, id: entry.rowId, data, deleted: false, clientUpdatedAt: entry.changedAt };
 }
 
 // After a successful push. An entry is cleared only if the row wasn't edited
 // again while the request was in flight — otherwise it stays pending.
-export function ackPushed(entries: OutboxEntry[]): void {
-  sqliteDb.withTransactionSync(() => {
-    for (const e of entries) dropOutboxEntry(e.table, e.rowId, e.changedAt);
+export async function ackPushed(entries: OutboxEntry[]): Promise<void> {
+  await sqliteDb.withTransactionAsync(async () => {
+    for (const e of entries) await dropOutboxEntry(e.table, e.rowId, e.changedAt);
   });
 }
 
-function dropOutboxEntry(table: string, rowId: string, changedAt: number): void {
-  sqliteDb.runSync(
+async function dropOutboxEntry(table: string, rowId: string, changedAt: number): Promise<void> {
+  await sqliteDb.runAsync(
     'DELETE FROM _sync_outbox WHERE table_name = ? AND row_id = ? AND changed_at = ?',
     table,
     rowId,
@@ -132,10 +145,10 @@ function dropOutboxEntry(table: string, rowId: string, changedAt: number): void 
 // ── Pull side ───────────────────────────────────────────────────────────────
 
 const columnCache = new Map<SyncedTable, Set<string>>();
-function columnsOf(table: SyncedTable): Set<string> {
+async function columnsOf(table: SyncedTable): Promise<Set<string>> {
   let cols = columnCache.get(table);
   if (!cols) {
-    const info = sqliteDb.getAllSync<{ name: string }>(`PRAGMA table_info(${table})`);
+    const info = await sqliteDb.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
     cols = new Set(info.map((c) => c.name));
     columnCache.set(table, cols);
   }
@@ -148,7 +161,10 @@ export type ApplyResult = { applied: number; skipped: number };
 // triggers muted so nothing is echoed back. Last-write-wins against local
 // unsent edits: a pending local edit newer than the incoming change is kept
 // (it will be pushed); otherwise the incoming change replaces it.
-export function applyRemote(changes: SyncChange[], newCursor?: number): ApplyResult {
+export async function applyRemote(
+  changes: SyncChange[],
+  newCursor?: number,
+): Promise<ApplyResult> {
   // Latest change per row wins within a batch (input is in version order).
   const latest = new Map<string, SyncChange>();
   for (const c of changes) {
@@ -161,23 +177,27 @@ export function applyRemote(changes: SyncChange[], newCursor?: number): ApplyRes
 
   let applied = 0;
   let skipped = 0;
-  sqliteDb.withTransactionSync(() => {
-    sqliteDb.runSync("UPDATE _sync_state SET applying = 1 WHERE id = 'singleton'");
-    sqliteDb.execSync('PRAGMA defer_foreign_keys = ON');
+  await sqliteDb.withTransactionAsync(async () => {
+    await sqliteDb.runAsync("UPDATE _sync_state SET applying = 1 WHERE id = 'singleton'");
+    await sqliteDb.execAsync('PRAGMA defer_foreign_keys = ON');
+
+    // Unsent local edits, read once for the whole batch.
+    const pendingRows = await sqliteDb.getAllAsync<{
+      table_name: string;
+      row_id: string;
+      changed_at: number;
+    }>('SELECT table_name, row_id, changed_at FROM _sync_outbox');
+    const pending = new Map(pendingRows.map((r) => [`${r.table_name}\u0000${r.row_id}`, r.changed_at]));
 
     for (const c of [...deletes, ...upserts]) {
       const table = c.table as SyncedTable;
-      const pending = sqliteDb.getFirstSync<{ changed_at: number }>(
-        'SELECT changed_at FROM _sync_outbox WHERE table_name = ? AND row_id = ?',
-        table,
-        c.id,
-      );
-      if (pending && pending.changed_at > c.clientUpdatedAt) {
+      const localChangedAt = pending.get(`${table}\u0000${c.id}`);
+      if (localChangedAt != null && localChangedAt > c.clientUpdatedAt) {
         skipped++;
         continue;
       }
-      if (pending) {
-        sqliteDb.runSync(
+      if (localChangedAt != null) {
+        await sqliteDb.runAsync(
           'DELETE FROM _sync_outbox WHERE table_name = ? AND row_id = ?',
           table,
           c.id,
@@ -185,17 +205,17 @@ export function applyRemote(changes: SyncChange[], newCursor?: number): ApplyRes
       }
 
       if (c.deleted) {
-        sqliteDb.runSync(`DELETE FROM ${table} WHERE id = ?`, c.id);
+        await sqliteDb.runAsync(`DELETE FROM ${table} WHERE id = ?`, c.id);
         applied++;
         continue;
       }
-      const data = c.data && withResolvedParents(table, c.data);
+      const data = c.data && (await withResolvedParents(table, c.data));
       if (!data) {
         skipped++;
         continue;
       }
       try {
-        upsertRow(table, data);
+        await upsertRow(table, data);
         applied++;
       } catch (e) {
         // A single bad row (e.g. a constraint clash) must not wedge every
@@ -206,21 +226,24 @@ export function applyRemote(changes: SyncChange[], newCursor?: number): ApplyRes
     }
 
     if (newCursor != null) {
-      sqliteDb.runSync("UPDATE _sync_state SET cursor = ? WHERE id = 'singleton'", newCursor);
+      await sqliteDb.runAsync(
+        "UPDATE _sync_state SET cursor = ? WHERE id = 'singleton'",
+        newCursor,
+      );
     }
-    sqliteDb.runSync("UPDATE _sync_state SET applying = 0 WHERE id = 'singleton'");
+    await sqliteDb.runAsync("UPDATE _sync_state SET applying = 0 WHERE id = 'singleton'");
   });
   return { applied, skipped };
 }
 
-function upsertRow(table: SyncedTable, data: RowData): void {
+async function upsertRow(table: SyncedTable, data: RowData): Promise<void> {
   // Only columns this schema version knows; extra keys from a newer app
   // version are ignored, missing ones fall back to column defaults.
-  const known = columnsOf(table);
+  const known = await columnsOf(table);
   const cols = Object.keys(data).filter((k) => known.has(k));
   const quoted = cols.map((k) => `"${k}"`);
   const updates = quoted.filter((q) => q !== '"id"').map((q) => `${q} = excluded.${q}`);
-  sqliteDb.runSync(
+  await sqliteDb.runAsync(
     `INSERT INTO ${table} (${quoted.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})
      ON CONFLICT (id) DO ${updates.length ? `UPDATE SET ${updates.join(', ')}` : 'NOTHING'}`,
     cols.map((k) => data[k]),
@@ -229,21 +252,23 @@ function upsertRow(table: SyncedTable, data: RowData): void {
 
 // ── Shared ──────────────────────────────────────────────────────────────────
 
-function isSyncable(table: SyncedTable, id: string): boolean {
+async function isSyncable(table: SyncedTable, id: string): Promise<boolean> {
   const where = tableDef(table).syncableWhere;
   if (!where) return true;
-  return sqliteDb.getFirstSync(`SELECT 1 FROM ${table} WHERE id = ? AND (${where})`, id) != null;
+  const row = await sqliteDb.getFirstAsync(`SELECT 1 FROM ${table} WHERE id = ? AND (${where})`, id);
+  return row != null;
 }
 
 // Checks the row's references against what exists locally. A missing required
 // parent makes the row unstorable (null); a missing optional parent is nulled,
 // matching ON DELETE SET NULL.
-function withResolvedParents(table: SyncedTable, row: RowData): RowData | null {
+async function withResolvedParents(table: SyncedTable, row: RowData): Promise<RowData | null> {
   let out = row;
   for (const fk of tableDef(table).foreignKeys) {
     const ref = row[fk.column];
     if (ref == null) continue;
-    const exists = sqliteDb.getFirstSync(`SELECT 1 FROM ${fk.parent} WHERE id = ?`, ref) != null;
+    const parent = await sqliteDb.getFirstAsync(`SELECT 1 FROM ${fk.parent} WHERE id = ?`, ref);
+    const exists = parent != null;
     if (exists) continue;
     if (fk.required) return null;
     out = { ...out, [fk.column]: null };

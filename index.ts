@@ -6,14 +6,22 @@
 // downloading its script and compiling SQLite's WASM ("Sync operation
 // timeout"). So on web we first open the database asynchronously — which
 // waits for the worker to be up — and only then load the app.
+//
+// `require` (not `import()`) on purpose: the app stays in the main bundle and
+// is merely *executed* later. A dynamic import would be split into a separate
+// chunk, which the static web export fails to resolve.
+import { openDatabaseAsync } from 'expo-sqlite';
 import { Platform } from 'react-native';
 
+function startApp() {
+  require('expo-router/entry');
+}
+
 if (Platform.OS === 'web') {
-  void import('expo-sqlite')
-    .then((SQLite) => SQLite.openDatabaseAsync('fitness.db', { enableChangeListener: true }))
+  openDatabaseAsync('fitness.db', { enableChangeListener: true })
     .then((warm) => warm.closeAsync())
     .catch((e) => console.error('[db] web warm-up failed', e))
-    .then(() => import('expo-router/entry'));
+    .finally(startApp);
 } else {
-  require('expo-router/entry');
+  startApp();
 }

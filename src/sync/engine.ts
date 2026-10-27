@@ -57,16 +57,16 @@ export function subscribeSyncStatus(listener: (s: SyncStatus) => void): () => vo
   return () => listeners.delete(listener);
 }
 
-export function refreshPending(): void {
-  setStatus({ pending: pendingCount() });
+export async function refreshPending(): Promise<void> {
+  setStatus({ pending: await pendingCount() });
 }
 
 export async function initSync(): Promise<void> {
   creds = await loadCredentials();
   setStatus({
     signedIn: creds != null,
-    pending: pendingCount(),
-    lastSyncedAt: readSyncState().lastSyncedAt,
+    pending: await pendingCount(),
+    lastSyncedAt: (await readSyncState()).lastSyncedAt,
   });
 }
 
@@ -81,10 +81,10 @@ export async function signIn(token: string): Promise<void> {
   const res = await syncApi.createSession({ token });
   // Throws before anything is stored if this DB already syncs with another
   // server. The server origin is the account identity: one owner per server.
-  linkAccount(SYNC_URL!);
+  await linkAccount(SYNC_URL!);
   creds = { session: res.session, expiresAt: res.expiresAt };
   await saveCredentials(creds);
-  setStatus({ signedIn: true, error: null, pending: pendingCount() });
+  setStatus({ signedIn: true, error: null, pending: await pendingCount() });
   void syncNow();
 }
 
@@ -113,25 +113,25 @@ async function runSync(): Promise<void> {
     await pushAll(session);
     await pullAll(session);
     const now = Date.now();
-    markSynced(now);
+    await markSynced(now);
     setStatus({ lastSyncedAt: now, error: null });
   } catch (e) {
     if (e instanceof AuthError) await signOut();
     setStatus({ error: e instanceof Error ? e.message : String(e) });
   } finally {
-    setStatus({ syncing: false, pending: pendingCount() });
+    setStatus({ syncing: false, pending: await pendingCount() });
   }
 }
 
 async function pushAll(session: string): Promise<void> {
   for (;;) {
-    const { changes, entries } = collectPush(PUSH_BATCH);
+    const { changes, entries } = await collectPush(PUSH_BATCH);
     if (changes.length === 0) return;
     const { rejected } = await syncApi.push(session, { changes });
-    ackPushed(entries);
+    await ackPushed(entries);
     // The server held newer edits for these rows — adopt them.
-    if (rejected.length > 0) applyRemote(rejected);
-    setStatus({ pending: pendingCount() });
+    if (rejected.length > 0) await applyRemote(rejected);
+    setStatus({ pending: await pendingCount() });
     // A short batch means everything pending at collection time was sent;
     // rows edited since then go out on the next sync.
     if (changes.length < PUSH_BATCH) return;
@@ -142,7 +142,7 @@ async function pushAll(session: string): Promise<void> {
 // may sit on an earlier page than its parent (the parent was edited later and
 // got a higher version), so pages can't be applied one at a time.
 async function pullAll(session: string): Promise<void> {
-  let cursor = readSyncState().cursor;
+  let cursor = (await readSyncState()).cursor;
   const changes: SyncChange[] = [];
   for (;;) {
     const page = await syncApi.pull(session, cursor);
@@ -150,5 +150,5 @@ async function pullAll(session: string): Promise<void> {
     cursor = page.nextCursor;
     if (!page.hasMore) break;
   }
-  if (changes.length > 0) applyRemote(changes, cursor);
+  if (changes.length > 0) await applyRemote(changes, cursor);
 }
