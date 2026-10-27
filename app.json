@@ -40,7 +40,8 @@
         }
       ],
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      "./plugins/withPodsMinDeploymentTarget"
     ],
     "experiments": {
       "typedRoutes": true,
