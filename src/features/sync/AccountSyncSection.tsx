@@ -92,7 +92,7 @@ function SignInForm({ lastError }: { lastError: string | null }) {
     <Surface style={[styles.card, { borderColor: accent.accentEdge }]}>
       <ThemedText style={styles.title}>Back up & sync</ThemedText>
       <ThemedText style={[styles.hint, { color: accent.textDim }]}>
-        Enter the server's access token to copy your history to the cloud and keep devices in
+        Enter the access token to copy your history to the cloud and keep devices in
         sync. The app keeps working offline either way.
       </ThemedText>
       <StyledTextInput
