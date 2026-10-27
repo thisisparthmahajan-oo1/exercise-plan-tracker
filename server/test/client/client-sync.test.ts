@@ -7,7 +7,7 @@ import { after, before, test } from 'node:test';
 import { MongoClient } from 'mongodb';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
-import { createApp } from '../../src/app';
+import { createApp } from '../../src/createApp';
 import { hashPassword } from '../../src/auth';
 import { connect } from '../../src/mongo';
 import { createDevice, sqliteDb, useDevice } from './fake-db-client';

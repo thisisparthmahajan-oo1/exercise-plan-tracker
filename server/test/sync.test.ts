@@ -6,7 +6,7 @@ import { MongoClient } from 'mongodb';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
 import type { PullResponse, PushResponse, SyncChange } from '../../src/sync/protocol';
-import { createApp } from '../src/app';
+import { createApp } from '../src/createApp';
 import { hashPassword } from '../src/auth';
 import { connect } from '../src/mongo';
 
