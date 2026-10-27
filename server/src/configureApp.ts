@@ -13,6 +13,17 @@ export function configureApp(
   getCols: () => Promise<Collections>,
   appToken: string,
 ): Express {
+  // CORS for the web build of the app. Any origin is fine: auth is a bearer
+  // session in a header, never a cookie, so a foreign page can't ride on it.
+  app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'authorization, content-type');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    if (req.method === 'OPTIONS') return void res.status(204).end();
+    next();
+  });
+
   // 200 rows of a few hundred bytes each fits comfortably.
   app.use(express.json({ limit: '2mb' }));
 
