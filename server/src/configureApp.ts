@@ -1,14 +1,18 @@
-import express, { type NextFunction, type Request, type Response } from 'express';
+import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 
 import { loginHandler, requireAuth } from './auth';
 import type { Collections } from './mongo';
 import { pullHandler, pushHandler } from './sync';
 
-// Collections are fetched per request (not at construction) so the app can be
-// created synchronously — serverless hosts import it and handle the first
-// request before any connection exists.
-export function createApp(getCols: () => Promise<Collections>, jwtSecret: string) {
-  const app = express();
+// Installs middleware and routes on an Express app. The entry point owns the
+// app instance (src/index.ts; tests build their own). Collections are fetched
+// per request, not here, so this runs synchronously — serverless hosts import
+// the app and handle the first request before any connection exists.
+export function configureApp(
+  app: Express,
+  getCols: () => Promise<Collections>,
+  jwtSecret: string,
+): Express {
   // 200 rows of a few hundred bytes each fits comfortably.
   app.use(express.json({ limit: '2mb' }));
 

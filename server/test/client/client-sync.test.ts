@@ -7,7 +7,9 @@ import { after, before, test } from 'node:test';
 import { MongoClient } from 'mongodb';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
-import { createApp } from '../../src/createApp';
+import express from 'express';
+
+import { configureApp } from '../../src/configureApp';
 import { hashPassword } from '../../src/auth';
 import { connect } from '../../src/mongo';
 import { createDevice, sqliteDb, useDevice } from './fake-db-client';
@@ -17,7 +19,7 @@ type Engine = typeof import('../../../src/sync/engine');
 let engine: Engine;
 let mongo: MongoMemoryServer;
 let client: MongoClient;
-let server: ReturnType<ReturnType<typeof createApp>['listen']>;
+let server: ReturnType<ReturnType<typeof express>['listen']>;
 
 const run = (sql: string, ...p: (string | number | null)[]) => sqliteDb.runSync(sql, ...p);
 const all = <T = Record<string, unknown>>(sql: string, ...p: (string | number)[]) =>
@@ -61,7 +63,7 @@ before(async () => {
     passwordHash: await hashPassword('pw'),
     createdAt: new Date(),
   });
-  server = createApp(async () => conn.cols, 'secret').listen(0);
+  server = configureApp(express(), async () => conn.cols, 'secret').listen(0);
   process.env.EXPO_PUBLIC_SYNC_URL = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   engine = await import('../../../src/sync/engine');
 
@@ -188,7 +190,7 @@ test('works offline: edits queue and drain once the server is reachable', async 
   const conn = await connect(mongo.getUri(), 'e2e');
   await client.close();
   client = conn.client;
-  server = createApp(async () => conn.cols, 'secret').listen(Number(new URL(realUrl!).port));
+  server = configureApp(express(), async () => conn.cols, 'secret').listen(Number(new URL(realUrl!).port));
   await new Promise((r) => server.once('listening', r));
   await engine.syncNow();
   assert.equal(engine.getSyncStatus().error, null);

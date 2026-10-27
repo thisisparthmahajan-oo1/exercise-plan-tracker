@@ -6,13 +6,15 @@ import { MongoClient } from 'mongodb';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
 import type { PullResponse, PushResponse, SyncChange } from '../../src/sync/protocol';
-import { createApp } from '../src/createApp';
+import express from 'express';
+
+import { configureApp } from '../src/configureApp';
 import { hashPassword } from '../src/auth';
 import { connect } from '../src/mongo';
 
 let mongo: MongoMemoryServer;
 let client: MongoClient;
-let server: ReturnType<ReturnType<typeof createApp>['listen']>;
+let server: ReturnType<ReturnType<typeof express>['listen']>;
 let base: string;
 let token: string;
 
@@ -26,7 +28,7 @@ before(async () => {
     passwordHash: await hashPassword('pw'),
     createdAt: new Date(),
   });
-  server = createApp(async () => conn.cols, 'secret').listen(0);
+  server = configureApp(express(), async () => conn.cols, 'secret').listen(0);
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });
 
