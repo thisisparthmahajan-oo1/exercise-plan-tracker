@@ -47,6 +47,14 @@ export type TimeSeriesPoint = { bucketStart: Date; value: number };
 export const trackingTypeSchema = z.enum(['reps', 'bodyweight', 'time']);
 export type TrackingType = z.infer<typeof trackingTypeSchema>;
 
+// Exercise ids come in two shapes: built-in exercises use a fixed
+// `seed:<slug>` id (identical on every device, see src/db/seed.ts); custom
+// exercises get a random uuid.
+export const exerciseIdSchema = z.union([
+  z.string().regex(/^seed:[a-z0-9]+(-[a-z0-9]+)*$/),
+  z.string().uuid(),
+], { error: 'Invalid exercise id' });
+
 export const newExerciseSchema = z.object({
   name: z.string().min(1, 'Name is required').max(80),
   muscleGroup: z.string().max(40).optional(),
@@ -65,7 +73,7 @@ export const setPlanInputSchema = z.object({
 export type SetPlanInput = z.infer<typeof setPlanInputSchema>;
 
 export const routineExerciseInputSchema = z.object({
-  exerciseId: z.string().uuid(),
+  exerciseId: exerciseIdSchema,
   restSeconds: z.number().int().min(0).max(600).default(90),
   setPlans: z.array(setPlanInputSchema).min(1, 'Add at least one set'),
 });
@@ -79,7 +87,7 @@ export const newRoutineSchema = z.object({
 export type NewRoutineInput = z.infer<typeof newRoutineSchema>;
 
 export const newSetLogSchema = z.object({
-  exerciseId: z.string().uuid(),
+  exerciseId: exerciseIdSchema,
   setNumber: z.number().int().min(1),
   reps: z.number().int().min(0).max(1000),
   weight: z.number().min(0).max(2000),
