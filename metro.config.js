@@ -9,7 +9,7 @@ config.resolver.assetExts.push('wasm');
 // Its synchronous API needs SharedArrayBuffer, which browsers only enable on
 // cross-origin-isolated pages.
 config.server.enhanceMiddleware = (middleware) => (req, res, next) => {
-  res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   middleware(req, res, next);
 };
