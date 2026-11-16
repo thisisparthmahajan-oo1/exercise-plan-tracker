@@ -36,5 +36,9 @@ npm test           # server tests + two-device client sync tests (in-memory Mong
    Use a database user scoped to the `fitness` database only.
 4. Deploy, then check `https://<project>.vercel.app/health`.
 5. In the app repo root, set `EXPO_PUBLIC_SYNC_URL=https://<project>.vercel.app`
-   in `.env.local` (gitignored), then rebuild the app. In the app: Settings →
-   Account & Sync → paste `APP_TOKEN` → Connect.
+   in `.env`, then rebuild the app. In the app: Settings → Account & Sync →
+   paste `APP_TOKEN` → Connect.
+
+Live deployment: https://fitness-pm.vercel.app (Vercel project
+`exercise-plan-tracker`, Root Directory `server`), backed by the Atlas
+database `fitness`.

@@ -1,50 +1,56 @@
-# Welcome to your Expo app 👋
+# Exercise Logger
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Personal workout tracker: routines, live workout logging, history, analytics
+and body metrics. Built with Expo (SDK 54), expo-router and SQLite (drizzle).
 
-## Get started
+The app is **offline-first**: each device keeps its full data in a local SQLite
+database and works without internet. When online it syncs with a small cloud
+server (last-write-wins per row), so every device ends up with the same data.
 
-1. Install dependencies
+## Where it runs
 
-   ```bash
-   npm install
-   ```
+| Piece            | Hosted at                                                          | Source                 | Deploys                          |
+| ---------------- | ------------------------------------------------------------------ | ---------------------- | -------------------------------- |
+| iPhone app       | Installed directly on the phone (Xcode / `devicectl`, no App Store) | repo root              | Manual build + install           |
+| Web app          | https://fitness-app-pm.vercel.app (Vercel project `fitness-app-pm`) | repo root (`vercel.json`) | Auto on push to `master`     |
+| Sync server (API) | https://fitness-pm.vercel.app (Vercel project `exercise-plan-tracker`) | [`server/`](server/README.md) | Auto on push to `master`  |
+| Database         | MongoDB Atlas, database `fitness`                                  | —                      | —                                |
 
-2. Start the app
+- The sync server is API only: `/` returns "Cannot GET /"; check
+  `https://fitness-pm.vercel.app/health` instead.
+- The app finds the server through `EXPO_PUBLIC_SYNC_URL` in `.env` (public URL,
+  safe to commit).
+- Access is a single secret `APP_TOKEN` (set in the server's Vercel env vars).
+  Enter it once per device under Settings → Account & Sync. Never commit it.
+- Known issue: the web app works in desktop Chrome but does not load in iPhone
+  browsers yet.
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+ iPhone app ─┐                        ┌──────────────────────┐
+ (SQLite)    ├── push / pull (HTTPS) ─▶│ fitness-pm.vercel.app │──▶ MongoDB Atlas
+ Web app ────┘                        │ (Express, server/)    │    db: fitness
+ (SQLite in browser)                  └──────────────────────┘
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Develop
 
-## Learn more
+```bash
+npm install
+npx expo start          # dev server (iOS dev build / web)
+npx tsc --noEmit && npx expo lint
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Server: see [`server/README.md`](server/README.md) (`npm run dev`, `npm test`).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Install on the iPhone
 
-## Join the community
+```bash
+cd ios
+xcodebuild -workspace Fitness.xcworkspace -scheme Fitness -configuration Release \
+  -destination "id=<device-udid>" -derivedDataPath build -allowProvisioningUpdates build
+xcrun devicectl device install app --device <device-udid> \
+  build/Build/Products/Release-iphoneos/ExerciseLogger.app
+```
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Local data is never wiped by an install; a backup of the database is written
+before any data migration.
