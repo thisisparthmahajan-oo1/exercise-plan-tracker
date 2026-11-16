@@ -22,8 +22,9 @@ server (last-write-wins per row), so every device ends up with the same data.
   safe to commit).
 - Access is a single secret `APP_TOKEN` (set in the server's Vercel env vars).
   Enter it once per device under Settings → Account & Sync. Never commit it.
-- Known issue: the web app works in desktop Chrome but does not load in iPhone
-  browsers yet.
+- The web app is for **desktop browsers** (Chrome, Safari). iPhone browsers
+  can't run its in-browser database; on the phone, use the installed app.
+  Private/incognito windows don't work either (no persistent storage).
 
 ```
  iPhone app ─┐                        ┌──────────────────────┐
